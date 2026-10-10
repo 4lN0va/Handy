@@ -1,0 +1,44 @@
+[package]
+name = "handy-voice-api"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"
+description = "Transcript model, versioned JSON export, and custom backend API upload for the Handy fork"
+license = "MIT"
+publish = false
+
+# This crate is deliberately dependency-light and free of C/native build
+# requirements so that its logic can be compiled and tested on any host,
+# independent of the platform toolchain needed to link the full Tauri app.
+#
+# Optional features add the pieces that DO need native/platform crates:
+#   http    -> real HTTP transport (reuses reqwest, already a Handy dependency)
+#   keyring -> OS credential-store backed secret storage
+# The default feature set is empty so `cargo test` works anywhere.
+[features]
+default = []
+http = ["dep:reqwest", "dep:url"]
+keyring = ["dep:keyring"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+# Pure-Rust; already present in Handy's dependency tree. Used for the upload
+# idempotency key and for detecting a duplicate upload of identical content.
+sha2 = "0.10"
+
+reqwest = { version = "0.12", default-features = false, features = [
+    "blocking",
+    "json",
+    "rustls-tls",
+], optional = true }
+url = { version = "2", optional = true }
+keyring = { version = "3", optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+[lib]
+name = "handy_voice_api"
+path = "src/lib.rs"
