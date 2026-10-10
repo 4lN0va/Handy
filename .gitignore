@@ -45,3 +45,6 @@ result
 
 # Python bytecode (scripts/)
 __pycache__/
+
+# Local cache for tools/audit_rust_licenses.mjs (regenerable, large).
+tools/.license_cache.json
