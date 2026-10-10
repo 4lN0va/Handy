@@ -2,6 +2,50 @@
 
 Thank you for your interest in contributing to Handy! This guide will help you get started with contributing to this open source speech-to-text application.
 
+> ## 🔀 This is a fork — read this first
+>
+> This repository is a fork of [cjpais/Handy](https://github.com/cjpais/Handy).
+> The upstream guide below still describes the project's conventions, but three
+> fork-specific things apply:
+>
+> 1. **The feature freeze below is an upstream policy for upstream PRs.** It does
+>    not govern what this fork may add. Contributions to *this* fork's additions
+>    (the voice-API layer, JSON export, upload client, licence tooling) are
+>    welcome.
+> 2. **This environment may not be able to build the application.** If your
+>    native build fails immediately, that is expected on a machine without MSVC
+>    Build Tools — read [`docs/BUILD_BASELINE.md`](docs/BUILD_BASELINE.md) before
+>    filing anything.
+> 3. **The `handy-voice-api` crate can be built and tested without the GUI
+>    toolchain**, which is the fastest way to contribute:
+>
+>    ```bash
+>    . ./tools/dev_env.ps1                       # PowerShell: load the toolchain
+>    cd crates/handy-voice-api
+>    cargo +stable-x86_64-pc-windows-gnu test --all-features
+>    cargo +stable-x86_64-pc-windows-gnu clippy --all-targets --all-features -- -D warnings
+>    cargo +stable-x86_64-pc-windows-gnu fmt --check
+>    ```
+>
+> **Keep fork changes additive.** Prefer new modules over edits to upstream
+> files: every line changed in an upstream file is a line that must be
+> re-resolved on the next upstream merge. The voice-API layer is deliberately
+> isolated in its own crate for exactly this reason.
+>
+> **Two rules that are not negotiable:**
+>
+> * **Do not commit an API key**, and do not add code that can put one in an
+>   export, a settings file, or a log line. `handy-voice-api` has tests that fail
+>   if you do; extend them rather than working around them.
+> * **Do not mark a model with a restricted or unconfirmed licence as a
+>   recommended default.** `node tools/gen_model_licenses.mjs --check` fails CI
+>   if one is, and `SECURITY.md` explains why.
+>
+> Licence obligations for models and dependencies are tracked in
+> [`MODEL_LICENSES.md`](MODEL_LICENSES.md) and
+> [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Both are generated; change
+> the source data or the override file, not the documents.
+
 ## ⚠️ Feature Freeze
 
 **Handy is currently undergoing a feature freeze.** If you are submitting a PR which is a new feature that the community has not asked for, it will be rejected. If the community has asked for it, or you have explicitly gathered support, it may still be considered.

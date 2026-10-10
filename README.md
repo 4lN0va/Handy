@@ -6,6 +6,44 @@
 
 Handy is a cross-platform desktop application that provides simple, privacy-focused speech transcription. Press a shortcut, speak, and have your words appear in any text field. This happens on your own computer without sending any information to the cloud.
 
+> ## 🔀 This is a fork
+>
+> This repository is a fork of [cjpais/Handy](https://github.com/cjpais/Handy). It
+> tracks upstream and its differences are deliberately **additive**, so upstream
+> updates stay easy to merge. Everything below this box is upstream's own
+> documentation and still applies.
+>
+> **What this fork adds** (see [CHANGELOG.md](CHANGELOG.md) for detail):
+>
+> - A **versioned transcript model** with stable segment ids, so tentative and
+>   confirmed text can never both be appended.
+> - **JSON export / import** against a published schema,
+>   [`schema/transcript-v1.0.json`](schema/transcript-v1.0.json).
+> - A **custom backend upload client**: configurable URL, method, headers, auth
+>   and body shape, with bounded retry and idempotency.
+> - **API keys in the OS credential store** rather than a settings file.
+> - Model and dependency **licence tooling**, generating
+>   [MODEL_LICENSES.md](MODEL_LICENSES.md) and
+>   [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+>
+> **Read this before trusting anything here:**
+>
+> - ⚠️ **The application has not been built or run in its development
+>   environment.** The full build needs MSVC Build Tools (administrator rights)
+>   or an ONNX Runtime GNU build (which does not exist). **No GUI, microphone or
+>   transcription test has been performed.** Details, evidence and unblocking
+>   steps: [`docs/BUILD_BASELINE.md`](docs/BUILD_BASELINE.md).
+> - ✅ What *is* verified: the `handy-voice-api` crate builds and passes
+>   **160 tests** (plus a doctest) with a clean `clippy -D warnings`, and the
+>   front-end builds. See `docs/BUILD_BASELINE.md` §5 for the full table.
+> - The new Tauri command module is syntax- and format-checked only, **not
+>   type-checked**.
+> - Security posture and its limits: [SECURITY.md](SECURITY.md).
+>
+> **Developing on this fork:** start with
+> [`docs/BUILD_BASELINE.md`](docs/BUILD_BASELINE.md) and use
+> `tools/dev_env.ps1` to load the toolchain.
+
 ## Why Handy?
 
 Handy was created to fill the gap for a truly open source, extensible speech-to-text tool. As stated on [handy.computer](https://handy.computer):

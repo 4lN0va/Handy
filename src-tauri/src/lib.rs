@@ -207,6 +207,12 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     let history_manager =
         Arc::new(HistoryManager::new(app_handle).expect("Failed to initialize history manager"));
 
+    // Voice-API layer: transcript model, JSON export, custom backend upload.
+    // Additive — it does not touch the audio pipeline or the ASR engines.
+    let voice_api_manager = Arc::new(
+        commands::voice_api::init(app_handle).expect("Failed to initialize voice API manager"),
+    );
+
     // Apply accelerator preferences before any model loads
     managers::transcription::apply_accelerator_settings(app_handle);
 
@@ -215,6 +221,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
+    app_handle.manage(voice_api_manager.clone());
     app_handle.manage(tray::TrayState::new());
 
     // Note: Shortcuts are NOT initialized here.
@@ -767,6 +774,23 @@ pub fn run(cli_args: CliArgs) {
             commands::history::retry_history_entry_transcription,
             commands::history::update_history_limit,
             commands::history::update_recording_retention_period,
+            commands::voice_api::voice_api_get_config,
+            commands::voice_api::voice_api_set_config,
+            commands::voice_api::voice_api_default_config,
+            commands::voice_api::voice_api_has_api_key,
+            commands::voice_api::voice_api_set_api_key,
+            commands::voice_api::voice_api_clear_api_key,
+            commands::voice_api::voice_api_secret_storage,
+            commands::voice_api::voice_api_begin_session,
+            commands::voice_api::voice_api_apply_update,
+            commands::voice_api::voice_api_record_error,
+            commands::voice_api::voice_api_get_transcript,
+            commands::voice_api::voice_api_edit_segment,
+            commands::voice_api::voice_api_clear_transcript,
+            commands::voice_api::voice_api_export_to_file,
+            commands::voice_api::voice_api_import_from_file,
+            commands::voice_api::voice_api_test_connection,
+            commands::voice_api::voice_api_upload,
             helpers::clamshell::is_laptop,
         ])
         .events(collect_events![

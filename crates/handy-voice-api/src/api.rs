@@ -500,7 +500,8 @@ pub trait Transport: Send + Sync {
 }
 
 /// The outcome of an upload.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "snake_case")]
 pub enum UploadOutcome {
     /// The server accepted the transcript.
     Uploaded {
@@ -524,7 +525,7 @@ pub enum UploadOutcome {
 }
 
 /// The result of a connection test.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConnectionTestResult {
     /// Whether the endpoint answered with a success status.
     pub ok: bool,
@@ -876,19 +877,18 @@ pub mod reqwest_transport {
     impl ReqwestTransport {
         /// Build a transport.
         ///
-        /// `rustls` is used rather than the platform TLS stack so behaviour is
-        /// identical across macOS, Windows and Linux.
-        pub fn new(allow_insecure_http: bool) -> Result<Self, VoiceApiError> {
-            let mut builder = reqwest::blocking::Client::builder()
-                .use_rustls_tls()
-                .user_agent(concat!("HandyFork-VoiceApi/", env!("CARGO_PKG_VERSION")));
-            if allow_insecure_http {
-                builder = builder.danger_accept_invalid_certs(false);
-            }
-            let client = builder.build().map_err(|e| VoiceApiError::Transport {
-                endpoint: "<client>".into(),
-                message: e.to_string(),
-            })?;
+        /// The TLS backend is whatever `reqwest` was compiled with — the same
+        /// one Handy already links (native-tls: SChannel on Windows,
+        /// Security.framework on macOS, OpenSSL on Linux) — so embedding this
+        /// crate does not pull a second TLS stack into the binary.
+        pub fn new(_allow_insecure_http: bool) -> Result<Self, VoiceApiError> {
+            let client = reqwest::blocking::Client::builder()
+                .user_agent(concat!("HandyFork-VoiceApi/", env!("CARGO_PKG_VERSION")))
+                .build()
+                .map_err(|e| VoiceApiError::Transport {
+                    endpoint: "<client>".into(),
+                    message: e.to_string(),
+                })?;
             Ok(Self { client })
         }
     }

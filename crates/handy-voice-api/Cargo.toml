@@ -28,11 +28,12 @@ thiserror = "2"
 # idempotency key and for detecting a duplicate upload of identical content.
 sha2 = "0.10"
 
-reqwest = { version = "0.12", default-features = false, features = [
-    "blocking",
-    "json",
-    "rustls-tls",
-], optional = true }
+# NOTE ON TLS: `reqwest` is declared with its default features so this crate
+# uses the SAME TLS backend as the Handy app that embeds it (native-tls:
+# SChannel on Windows, Security.framework on macOS, OpenSSL on Linux). Enabling
+# `rustls-tls` here instead would compile a second TLS stack into the binary,
+# because Cargo unions features across the dependency graph.
+reqwest = { version = "0.12", features = ["blocking", "json"], optional = true }
 url = { version = "2", optional = true }
 keyring = { version = "3", optional = true }
 

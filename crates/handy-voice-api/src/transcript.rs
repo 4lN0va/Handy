@@ -54,7 +54,7 @@ impl SegmentKind {
 ///
 /// `segment_id` is the identity; `revision` orders successive updates to that
 /// same identity.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TranscriptUpdate {
     /// Stable identifier for the segment. Repeats across revisions.
     pub segment_id: String,
@@ -65,8 +65,10 @@ pub struct TranscriptUpdate {
     /// The text for this revision.
     pub text: String,
     /// Optional start offset in milliseconds from the session start.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start_ms: Option<i64>,
     /// Optional end offset in milliseconds from the session start.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end_ms: Option<i64>,
 }
 
@@ -217,7 +219,8 @@ impl Transcript {
 ///
 /// Returned rather than logged so callers (and tests) can assert on the exact
 /// deduplication behaviour.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "outcome", rename_all = "snake_case")]
 pub enum ApplyOutcome {
     /// A new segment was created.
     Created {
@@ -928,6 +931,68 @@ mod tests {
                 seg.kind == SegmentKind::Final,
                 "final flag must mirror kind for {}",
                 seg.segment_id
+            );
+        }
+    }
+
+    // --- GUI bridge: the frontend forwards recognition results as JSON ---
+
+    #[test]
+    fn a_transcript_update_survives_a_json_round_trip() {
+        // The command layer accepts updates as JSON from the frontend, so this
+        // wire form is part of the contract.
+        let update = TranscriptUpdate {
+            segment_id: "seg-1".into(),
+            revision: 3,
+            kind: SegmentKind::Final,
+            text: "你好，我想測試語音辨識。".into(),
+            start_ms: Some(100),
+            end_ms: Some(2400),
+        };
+        let json = serde_json::to_string(&update).unwrap();
+        assert!(json.contains("\"kind\":\"final\""));
+        assert_eq!(
+            serde_json::from_str::<TranscriptUpdate>(&json).unwrap(),
+            update
+        );
+    }
+
+    #[test]
+    fn an_update_without_timestamps_deserializes_from_a_minimal_document() {
+        let json = r#"{"segment_id":"s","revision":1,"kind":"partial","text":"hi"}"#;
+        let update: TranscriptUpdate = serde_json::from_str(json).unwrap();
+        assert_eq!(update.segment_id, "s");
+        assert_eq!(update.kind, SegmentKind::Partial);
+        assert_eq!(update.start_ms, None);
+    }
+
+    #[test]
+    fn apply_outcome_survives_a_json_round_trip() {
+        let outcomes = vec![
+            ApplyOutcome::Created {
+                segment_id: "a".into(),
+            },
+            ApplyOutcome::Updated {
+                segment_id: "a".into(),
+                revision: 2,
+            },
+            ApplyOutcome::IgnoredStaleRevision {
+                segment_id: "a".into(),
+                incoming: 1,
+                current: 2,
+            },
+            ApplyOutcome::IgnoredAfterFinal {
+                segment_id: "a".into(),
+            },
+            ApplyOutcome::IgnoredEmpty {
+                segment_id: "a".into(),
+            },
+        ];
+        for outcome in outcomes {
+            let json = serde_json::to_string(&outcome).unwrap();
+            assert_eq!(
+                serde_json::from_str::<ApplyOutcome>(&json).unwrap(),
+                outcome
             );
         }
     }

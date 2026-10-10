@@ -86,6 +86,13 @@ transcribe-cpp = { version = "0.3.1", default-features = false, features = [
 ] }
 handy-keys = "0.3.4"
 ferrous-opencc = "0.2.3"
+# Local voice-API layer (transcript model, JSON export, custom backend upload).
+# Kept as its own crate so it compiles and tests without the native GUI
+# toolchain; features add the HTTP transport and OS credential storage.
+handy-voice-api = { path = "../crates/handy-voice-api", features = [
+  "http",
+  "keyring",
+] }
 clap = { version = "4", features = ["derive"] }
 specta = "=2.0.0-rc.22"
 specta-typescript = "0.0.9"
