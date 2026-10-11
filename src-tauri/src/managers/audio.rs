@@ -642,7 +642,7 @@ impl AudioRecordingManager {
                 &self.app_handle,
                 settings.selected_channel,
                 Arc::clone(&self.stream_router),
-            Arc::clone(&self.speech_activity),
+                Arc::clone(&self.speech_activity),
             )?);
         }
         Ok(())

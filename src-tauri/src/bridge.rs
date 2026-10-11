@@ -291,10 +291,7 @@ impl Bridge {
     }
 
     pub fn config(&self) -> BridgeConfig {
-        self.config
-            .lock()
-            .map(|g| g.clone())
-            .unwrap_or_default()
+        self.config.lock().map(|g| g.clone()).unwrap_or_default()
     }
 
     pub fn config_json(&self) -> String {
@@ -587,9 +584,7 @@ fn post_heartbeat(
     for attempt in 1..=max_attempts.max(1) {
         match client.post(url).json(&payload).send() {
             Ok(response) if response.status().is_success() => {
-                status
-                    .heartbeats
-                    .fetch_add(1, Ordering::Relaxed);
+                status.heartbeats.fetch_add(1, Ordering::Relaxed);
                 status.note_ok(now);
                 return;
             }

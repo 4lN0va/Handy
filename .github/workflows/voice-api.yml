@@ -11,7 +11,7 @@ name: voice-api
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
   pull_request:
   workflow_dispatch:
 
@@ -89,7 +89,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       # The generated documents must match their source data. A stale
       # MODEL_LICENSES.md or THIRD_PARTY_NOTICES.md is worse than none, because it
@@ -149,7 +149,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       # The schema is embedded in the crate via include_str!, so a malformed
       # schema would be caught by the Rust tests too. This check is cheap and

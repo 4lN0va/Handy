@@ -24,16 +24,17 @@
  *   node tools/sync_translations.mjs --check   # exit 1 if anything would change
  */
 
-import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const LOCALES = join(here, '..', 'src', 'i18n', 'locales');
-const REFERENCE = 'en';
-const CHECK = process.argv.includes('--check');
+const LOCALES = join(here, "..", "src", "i18n", "locales");
+const REFERENCE = "en";
+const CHECK = process.argv.includes("--check");
 
-const isPlainObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
+const isPlainObject = (v) =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
 
 /**
  * Rebuild `target` from `reference`'s shape: reference key order, target value
@@ -47,11 +48,14 @@ function rebuild(reference, target) {
     // A leaf: keep a translated string, otherwise fall back to English. A
     // target that holds an object where the reference holds a string is
     // malformed, so it is replaced rather than preserved.
-    return typeof target === 'string' ? target : reference;
+    return typeof target === "string" ? target : reference;
   }
   const out = {};
   for (const key of Object.keys(reference)) {
-    out[key] = rebuild(reference[key], isPlainObject(target) ? target[key] : undefined);
+    out[key] = rebuild(
+      reference[key],
+      isPlainObject(target) ? target[key] : undefined,
+    );
   }
   return out;
 }
@@ -61,12 +65,12 @@ function countLeaves(obj) {
   return Object.values(obj).reduce((n, v) => n + countLeaves(v), 0);
 }
 
-const referencePath = join(LOCALES, REFERENCE, 'translation.json');
+const referencePath = join(LOCALES, REFERENCE, "translation.json");
 if (!existsSync(referencePath)) {
   console.error(`reference locale not found: ${referencePath}`);
   process.exit(2);
 }
-const reference = JSON.parse(readFileSync(referencePath, 'utf8'));
+const reference = JSON.parse(readFileSync(referencePath, "utf8"));
 
 const languages = readdirSync(LOCALES, { withFileTypes: true })
   .filter((e) => e.isDirectory() && e.name !== REFERENCE)
@@ -77,7 +81,7 @@ let changed = 0;
 let filled = 0;
 
 for (const lang of languages) {
-  const file = join(LOCALES, lang, 'translation.json');
+  const file = join(LOCALES, lang, "translation.json");
   if (!existsSync(file)) {
     console.log(`  ${lang.padEnd(10)} MISSING FILE`);
     changed += 1;
@@ -86,7 +90,7 @@ for (const lang of languages) {
 
   let current;
   try {
-    current = JSON.parse(readFileSync(file, 'utf8'));
+    current = JSON.parse(readFileSync(file, "utf8"));
   } catch (e) {
     console.log(`  ${lang.padEnd(10)} INVALID JSON: ${e.message}`);
     changed += 1;
@@ -98,7 +102,9 @@ for (const lang of languages) {
   const after = JSON.stringify(merged);
 
   if (before === after) {
-    console.log(`  ${lang.padEnd(10)} unchanged (${countLeaves(current)} keys)`);
+    console.log(
+      `  ${lang.padEnd(10)} unchanged (${countLeaves(current)} keys)`,
+    );
     continue;
   }
 
@@ -109,7 +115,7 @@ for (const lang of languages) {
   if (CHECK) {
     console.log(`  ${lang.padEnd(10)} WOULD CHANGE`);
   } else {
-    writeFileSync(file, JSON.stringify(merged, null, 2) + '\n', 'utf8');
+    writeFileSync(file, JSON.stringify(merged, null, 2) + "\n", "utf8");
     console.log(`  ${lang.padEnd(10)} updated`);
   }
   changed += 1;
@@ -118,16 +124,19 @@ for (const lang of languages) {
 /** Leaves present in the target with a non-English value, i.e. real translations. */
 function countEnglishOverlap(reference, target) {
   if (!isPlainObject(reference)) {
-    return typeof target === 'string' && target !== reference ? 1 : 0;
+    return typeof target === "string" && target !== reference ? 1 : 0;
   }
   let n = 0;
   for (const key of Object.keys(reference)) {
-    n += countEnglishOverlap(reference[key], isPlainObject(target) ? target[key] : undefined);
+    n += countEnglishOverlap(
+      reference[key],
+      isPlainObject(target) ? target[key] : undefined,
+    );
   }
   return n;
 }
 
-console.log('');
+console.log("");
 if (CHECK) {
   console.log(
     changed === 0
