@@ -16,7 +16,9 @@
     "postProcessing": "Son İşlem",
     "history": "Geçmiş",
     "debug": "Hata Ayıklama",
-    "about": "Hakkında"
+    "about": "Hakkında",
+    "transcript": "Transcript",
+    "voiceApi": "Voice API"
   },
   "onboarding": {
     "subtitle": "Başlamak için bir transkripsiyon modeli seçin",
@@ -122,8 +124,10 @@
   },
   "modelSelector": {
     "custom": "Özel",
+    "legacy": "Eski",
     "streaming": "Akış",
     "active": "Aktif",
+    "switching": "Değiştiriliyor...",
     "noModelsAvailable": "Kullanılabilir model yok",
     "verifying": "{{modelName}} doğrulanıyor...",
     "verifyingGeneric": "Doğrulanıyor...",
@@ -139,44 +143,22 @@
     "modelUnloaded": "Model Boşaltıldı",
     "noModelDownloadRequired": "Model Yok – İndirme Gerekli",
     "deleteModel": "{{modelName}} Sil",
-    "switching": "Değiştiriliyor...",
     "downloadSpeed": "{{speed}} MB/s",
-    "capabilities": {
-      "languageSelection": "Birden fazla giriş dilini destekler",
-      "languageCount": "{{total}} dil",
-      "translation": "İngilizce'ye çevirebilir",
-      "translate": "İngilizce'ye çevir",
-      "singleLanguage": "Yalnızca bu dili destekler",
-      "languageOnly": "Yalnızca {{language}}",
-      "streaming": "Konuşurken canlı transkripsiyon gösterir"
-    },
     "cancel": "İptal",
     "cancelDownload": "İndirmeyi iptal et",
-    "legacy": "Eski"
+    "capabilities": {
+      "languageSelection": "Birden fazla giriş dilini destekler",
+      "singleLanguage": "Yalnızca bu dili destekler",
+      "languageCount": "{{total}} dil",
+      "languageOnly": "Yalnızca {{language}}",
+      "translation": "İngilizce'ye çevirebilir",
+      "translate": "İngilizce'ye çevir",
+      "streaming": "Konuşurken canlı transkripsiyon gösterir"
+    }
   },
   "settings": {
     "modelSettings": {
       "title": "{{model}} Ayarları"
-    },
-    "models": {
-      "title": "Transkripsiyon Modelleri",
-      "description": "Bir transkripsiyon modeli seçin veya ek modeller indirin. Farklı modeller değişen doğruluk ve hız seviyeleri sunar.",
-      "deleteConfirm": "{{modelName}} modelini silmek istediğinizden emin misiniz? Kullanmak için tekrar indirmeniz gerekecek.",
-      "deleteActiveConfirm": "{{modelName}} aktif modelinizdir. Silmek, yeni bir model seçene kadar transkripsiyonları durduracaktır. Emin misiniz?",
-      "deleteTitle": "Modeli Sil",
-      "filters": {
-        "allLanguages": "Tüm Diller",
-        "streaming": "Canlı transkripsiyonu destekleyen modelleri filtrele",
-        "translation": "İngilizce'ye çeviriyi destekleyen modelleri filtrele"
-      },
-      "noModelsMatch": "Bu filtreyle eşleşen model yok.",
-      "yourModels": "İndirilen Modeller",
-      "availableModels": "İndirilebilir",
-      "searchPlaceholder": "Modelleri ada göre ara…",
-      "rescan": {
-        "label": "Yeniden Tara",
-        "tooltip": "Handy dışında modeller klasörüne veya Hugging Face önbelleğine eklenen modelleri yeniden tara"
-      }
     },
     "general": {
       "title": "Genel",
@@ -228,6 +210,26 @@
           "toggle": "Kaydı başlatmak için kısayola dokunun, durdurmak için tekrar dokunun"
         }
       }
+    },
+    "models": {
+      "title": "Transkripsiyon Modelleri",
+      "description": "Bir transkripsiyon modeli seçin veya ek modeller indirin. Farklı modeller değişen doğruluk ve hız seviyeleri sunar.",
+      "searchPlaceholder": "Modelleri ada göre ara…",
+      "yourModels": "İndirilen Modeller",
+      "availableModels": "İndirilebilir",
+      "deleteConfirm": "{{modelName}} modelini silmek istediğinizden emin misiniz? Kullanmak için tekrar indirmeniz gerekecek.",
+      "deleteActiveConfirm": "{{modelName}} aktif modelinizdir. Silmek, yeni bir model seçene kadar transkripsiyonları durduracaktır. Emin misiniz?",
+      "deleteTitle": "Modeli Sil",
+      "filters": {
+        "allLanguages": "Tüm Diller",
+        "streaming": "Canlı transkripsiyonu destekleyen modelleri filtrele",
+        "translation": "İngilizce'ye çeviriyi destekleyen modelleri filtrele"
+      },
+      "rescan": {
+        "label": "Yeniden Tara",
+        "tooltip": "Handy dışında modeller klasörüne veya Hugging Face önbelleğine eklenen modelleri yeniden tara"
+      },
+      "noModelsMatch": "Bu filtreyle eşleşen model yok."
     },
     "sound": {
       "title": "Ses",
@@ -505,6 +507,20 @@
         "description": "Handy için yeni sürümleri otomatik olarak kontrol eder",
         "lockedDescription": "Sistem yapılandırması tarafından devre dışı bırakıldı (HANDY_DISABLE_UPDATER)"
       },
+      "whatsNewPreview": {
+        "title": "Yenilikleri Önizle",
+        "description": "En son paketlenmiş sürüm notunu görüldü olarak işaretlemeden aç",
+        "button": "Önizle",
+        "noNotes": "Paketlenmiş sürüm notu bulunamadı",
+        "error": "Sürüm notları önizlenemedi"
+      },
+      "onboardingPreview": {
+        "title": "İlk kurulum önizlemesi",
+        "description": "İzinleri, modelleri veya tamamlanma durumunu değiştirmeden ilk kurulum ekranlarını önizleyin",
+        "permissionsButton": "İzinler",
+        "modelsButton": "Model seçimi",
+        "exitButton": "Önizlemeden çık"
+      },
       "soundTheme": {
         "label": "Ses Teması",
         "description": "Kayıt başlangıç ve bitişi için sesli geri bildirim temasını seçin"
@@ -597,20 +613,6 @@
         "verdictOk": "Tuş olayları Handy'ye normal şekilde ulaşıyor.",
         "verdictNoEvents": "Hiç olay yakalanmadı — test sırasında herhangi bir tuşa bastınız mı?",
         "failed": "Tanılama başarısız: {{error}}"
-      },
-      "whatsNewPreview": {
-        "title": "Yenilikleri Önizle",
-        "description": "En son paketlenmiş sürüm notunu görüldü olarak işaretlemeden aç",
-        "button": "Önizle",
-        "noNotes": "Paketlenmiş sürüm notu bulunamadı",
-        "error": "Sürüm notları önizlenemedi"
-      },
-      "onboardingPreview": {
-        "title": "İlk kurulum önizlemesi",
-        "description": "İzinleri, modelleri veya tamamlanma durumunu değiştirmeden ilk kurulum ekranlarını önizleyin",
-        "permissionsButton": "İzinler",
-        "modelsButton": "Model seçimi",
-        "exitButton": "Önizlemeden çık"
       }
     },
     "about": {
@@ -618,6 +620,10 @@
       "version": {
         "title": "Sürüm",
         "description": "Handy'nin mevcut sürümü"
+      },
+      "whatsNewUpdates": {
+        "label": "Yenilikleri Göster",
+        "description": "Handy güncellemelerinden sonra sürüm notlarını göster"
       },
       "appDataDirectory": {
         "title": "Uygulama Veri Dizini",
@@ -640,10 +646,6 @@
           "description": "Cihaz üzerinde makine öğrenmesi çıkarımı için yüksek performanslı tensör kütüphanesi",
           "details": "Handy'nin yerel konuşmadan metne dönüştürme özelliği transcribe.cpp ve ggml üzerine kuruludur. Georgi Gerganov'a ve katkıda bulunanlara harika çalışmaları için teşekkür ederiz."
         }
-      },
-      "whatsNewUpdates": {
-        "label": "Yenilikleri Göster",
-        "description": "Handy güncellemelerinden sonra sürüm notlarını göster"
       }
     }
   },
@@ -661,6 +663,9 @@
     "portableUpdateButton": "Yükleyiciyi indir",
     "portableUpdateBrowseMessage": "Taşınabilir kurulumlar otomatik olarak güncellenemez. Sisteminize uygun en son sürümü GitHub Releases’ten indirin ve aynı klasöre kurun — Data/ klasörünüz (ayarlar, modeller, kayıtlar) yerinde kalır.",
     "portableUpdateBrowseButton": "GitHub Releases’i aç"
+  },
+  "whatsNew": {
+    "title": "Handy v{{version}} yenilikleri"
   },
   "common": {
     "loading": "Yükleniyor...",
@@ -711,9 +716,6 @@
     "processing": "İşleniyor...",
     "loadingModel": "Model yükleniyor..."
   },
-  "whatsNew": {
-    "title": "Handy v{{version}} yenilikleri"
-  },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} 1 kısayolu engelliyor olabilir",
     "blockedWithCulprit_other": "{{name}} {{count}} kısayolu engelliyor olabilir",
@@ -724,5 +726,114 @@
     "learnMore": "Bu nasıl düzeltilir",
     "recorderBlocked": "Şu anda kısayol kaydedilemiyor — macOS Secure Input tuş olaylarını engelliyor. Önce Secure Input uyarısını giderin.",
     "dismiss": "Kapat"
+  },
+  "transcript": {
+    "title": "Transcript",
+    "description": "Live recognition results. Italic text is still being recognized and may change; confirmed text has been finalized.",
+    "empty": "No speech recognized yet. Start dictating to see results here.",
+    "confirmed": "Confirmed",
+    "recognizing": "Recognizing",
+    "actionsTitle": "Transcript actions",
+    "finalsOnly": "Confirmed text only",
+    "finalsOnlyDescription": "Copy and export only the finalized segments, excluding anything still being recognized.",
+    "copy": "Copy",
+    "export": "Export JSON",
+    "clear": "Clear",
+    "copied": "Copied to clipboard.",
+    "exported": "Exported to {{path}}",
+    "save": "Save",
+    "cancel": "Cancel",
+    "editHint": "Click to edit this segment. Editing marks it confirmed.",
+    "uploadTitle": "Upload to your backend",
+    "uploadDescription": "Uploads the transcript as JSON to the endpoint configured in Voice API. Nothing is uploaded unless you press the button below.",
+    "willUpload": "This will be sent",
+    "session": "Session",
+    "language": "Language",
+    "segments": "Segments",
+    "confirmedShort": "confirmed",
+    "nothingToUpload": "Nothing to upload yet.",
+    "uploadNow": "Upload now",
+    "uploading": "Uploading…",
+    "uploadManualNote": "Manual only — this fork never uploads automatically.",
+    "uploaded": "Uploaded (HTTP {{status}}, {{attempts}} attempt(s)).",
+    "uploadSkipped": "Nothing was uploaded.",
+    "continuous": {
+      "title": "Continuous listening",
+      "enabledHint": "When on, the transcription shortcut can start continuous listening. When off, the shortcut does nothing.",
+      "start": "Start continuous",
+      "stop": "Stop continuous",
+      "running": "Recording continuously",
+      "idle": "Idle",
+      "elapsed": "Elapsed",
+      "segments": "Segments",
+      "transcribing": "Transcribing",
+      "startedNotice": "Continuous transcription started.",
+      "stoppedNotice": "Continuous transcription stopped.",
+      "pauseMs": "Pause to end a segment (ms)",
+      "maxSegmentMs": "Maximum segment length (ms)",
+      "bridgeTitle": "Integration bridge",
+      "bridgeDescription": "Sends heartbeat and transcript events to the local verification tool. Off unless you turn it on. Loopback or https only.",
+      "bridgeOn": "Enabled",
+      "bridgeOff": "Disabled",
+      "bridgeSaved": "Endpoint saved.",
+      "bridgeDefaultEndpoint": "http://127.0.0.1:8765",
+      "save": "Save",
+      "sent": "Events sent",
+      "heartbeats": "Heartbeats",
+      "failed": "Failed",
+      "silenceLevel": "Silence threshold (0.05-0.95)",
+      "armedNotice": "Continuous listening armed. Press your transcription shortcut to start or stop.",
+      "disarmedNotice": "Continuous listening disarmed. The shortcut behaves as before."
+    }
+  },
+  "voiceApi": {
+    "endpointTitle": "Endpoint",
+    "endpointDescription": "Where transcripts are sent. HTTPS is required unless you explicitly allow plain HTTP for a local backend.",
+    "baseUrl": "Base URL",
+    "baseUrlDescription": "For example https://api.example.com/v1. A trailing slash is ignored.",
+    "endpointPath": "Endpoint path",
+    "endpointPathDescription": "Appended to the base URL. A leading slash resets to the host root; a full URL replaces the base entirely.",
+    "method": "HTTP method",
+    "methodDescription": "POST, PUT or PATCH.",
+    "contentType": "Content-Type",
+    "contentTypeDescription": "Sent as the request Content-Type header.",
+    "bodyTitle": "Request body",
+    "bodyDescription": "Backends disagree about request shapes, so the body is configurable rather than assumed.",
+    "bodyFormat": "Body format",
+    "bodyFormatDescription": "How the transcript is placed in the request.",
+    "bodyRaw": "Transcript document",
+    "bodyWrapped": "Wrapped in a field",
+    "bodyTemplate": "Custom JSON template",
+    "wrapField": "Wrapping field",
+    "wrapFieldDescription": "The transcript is nested under this key, e.g. {\"transcript\": {…}}.",
+    "template": "JSON template",
+    "templateDescription": "A JSON object containing {{transcript}}, which is replaced by the transcript document.",
+    "authTitle": "Authentication",
+    "authDescription": "The API key is stored in the operating system credential store — never in a settings file, a transcript export, or a log.",
+    "apiKey": "API key",
+    "apiKeyStoredIn": "A key is stored in the {{where}}.",
+    "apiKeyNotSet": "No API key stored.",
+    "saveKey": "Save key",
+    "clearKey": "Remove key",
+    "apiKeyNote": "The key is write-only: the app never displays it again after saving.",
+    "customHeaders": "Custom headers",
+    "customHeadersDescription": "One header per line as Name: Value. Authorization is managed by the key above.",
+    "behaviourTitle": "Behaviour",
+    "behaviourDescription": "Timeouts, retries and duplicate protection for uploads.",
+    "timeout": "Timeout (ms)",
+    "timeoutDescription": "How long a single request may take before it fails.",
+    "maxAttempts": "Maximum attempts",
+    "maxAttemptsDescription": "Total tries including the first. Only timeouts, connection failures, HTTP 429 and 5xx are retried.",
+    "idempotency": "Send idempotency key",
+    "idempotencyDescription": "Sends an Idempotency-Key derived from the session and the exact request body, so a backend can recognise a retry instead of storing it twice. Only helps if the server honours it.",
+    "allowHttp": "Allow insecure HTTP",
+    "allowHttpDescription": "Off by default. Only enable this for a backend on localhost; it sends your transcript in cleartext.",
+    "save": "Save configuration",
+    "working": "Working…",
+    "testConnection": "Test connection",
+    "saved": "Configuration saved.",
+    "keySaved": "API key saved to the OS credential store.",
+    "keyCleared": "API key removed.",
+    "testResult": "Test result"
   }
 }

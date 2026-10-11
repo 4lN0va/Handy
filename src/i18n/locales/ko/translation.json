@@ -16,7 +16,9 @@
     "postProcessing": "후처리",
     "history": "히스토리",
     "debug": "디버그",
-    "about": "정보"
+    "about": "정보",
+    "transcript": "Transcript",
+    "voiceApi": "Voice API"
   },
   "onboarding": {
     "subtitle": "시작하려면 음성 인식 모델을 선택하세요",
@@ -122,6 +124,7 @@
   },
   "modelSelector": {
     "custom": "사용자 정의",
+    "legacy": "레거시",
     "streaming": "스트리밍",
     "active": "활성",
     "switching": "전환 중...",
@@ -151,8 +154,7 @@
       "translation": "영어로 번역 가능",
       "translate": "영어로 번역",
       "streaming": "말하는 동안 실시간으로 음성 인식 결과를 표시"
-    },
-    "legacy": "레거시"
+    }
   },
   "settings": {
     "modelSettings": {
@@ -209,6 +211,26 @@
         }
       }
     },
+    "models": {
+      "title": "음성 인식 모델",
+      "description": "음성 인식 모델을 선택하거나 추가 모델을 다운로드하세요. 모델마다 정확도와 속도가 다릅니다.",
+      "searchPlaceholder": "이름으로 모델 검색…",
+      "yourModels": "다운로드된 모델",
+      "availableModels": "다운로드 가능",
+      "deleteConfirm": "{{modelName}}을(를) 삭제하시겠습니까? 다시 사용하려면 다운로드해야 합니다.",
+      "deleteActiveConfirm": "{{modelName}}은(는) 현재 활성 모델입니다. 삭제하면 새 모델을 선택할 때까지 전사가 중지됩니다. 정말 삭제하시겠습니까?",
+      "deleteTitle": "모델 삭제",
+      "filters": {
+        "allLanguages": "모든 언어",
+        "streaming": "실시간 음성 인식을 지원하는 모델 필터링",
+        "translation": "영어 번역을 지원하는 모델 필터링"
+      },
+      "rescan": {
+        "label": "다시 스캔",
+        "tooltip": "Handy 외부에서 모델 폴더 또는 Hugging Face 캐시에 추가된 모델을 다시 스캔합니다"
+      },
+      "noModelsMatch": "이 필터에 맞는 모델이 없습니다."
+    },
     "sound": {
       "title": "사운드",
       "microphone": {
@@ -236,26 +258,6 @@
       "volume": {
         "title": "볼륨",
         "description": "오디오 피드백 사운드의 볼륨 조절"
-      }
-    },
-    "models": {
-      "title": "음성 인식 모델",
-      "description": "음성 인식 모델을 선택하거나 추가 모델을 다운로드하세요. 모델마다 정확도와 속도가 다릅니다.",
-      "yourModels": "다운로드된 모델",
-      "availableModels": "다운로드 가능",
-      "deleteConfirm": "{{modelName}}을(를) 삭제하시겠습니까? 다시 사용하려면 다운로드해야 합니다.",
-      "deleteActiveConfirm": "{{modelName}}은(는) 현재 활성 모델입니다. 삭제하면 새 모델을 선택할 때까지 전사가 중지됩니다. 정말 삭제하시겠습니까?",
-      "deleteTitle": "모델 삭제",
-      "filters": {
-        "allLanguages": "모든 언어",
-        "streaming": "실시간 음성 인식을 지원하는 모델 필터링",
-        "translation": "영어 번역을 지원하는 모델 필터링"
-      },
-      "noModelsMatch": "이 필터에 맞는 모델이 없습니다.",
-      "searchPlaceholder": "이름으로 모델 검색…",
-      "rescan": {
-        "label": "다시 스캔",
-        "tooltip": "Handy 외부에서 모델 폴더 또는 Hugging Face 캐시에 추가된 모델을 다시 스캔합니다"
       }
     },
     "advanced": {
@@ -505,6 +507,20 @@
         "description": "Handy의 새 버전을 자동으로 확인합니다",
         "lockedDescription": "시스템 구성에 의해 비활성화됨 (HANDY_DISABLE_UPDATER)"
       },
+      "whatsNewPreview": {
+        "title": "새 소식 미리보기",
+        "description": "최신 내장 릴리스 노트를 본 것으로 표시하지 않고 엽니다",
+        "button": "미리보기",
+        "noNotes": "내장 릴리스 노트를 찾을 수 없습니다",
+        "error": "릴리스 노트를 미리 볼 수 없습니다"
+      },
+      "onboardingPreview": {
+        "title": "온보딩 미리보기",
+        "description": "권한, 모델 또는 완료 상태를 변경하지 않고 온보딩 화면을 미리 봅니다",
+        "permissionsButton": "권한",
+        "modelsButton": "모델 선택",
+        "exitButton": "미리보기 종료"
+      },
       "soundTheme": {
         "label": "사운드 테마",
         "description": "녹음 시작 및 정지 피드백을 위한 사운드 테마를 선택하세요"
@@ -553,6 +569,11 @@
         "description": "키보드 단축키 백엔드를 선택하세요.",
         "bindingsReset": "키보드 단축키가 호환되지 않아 기본값으로 재설정되었습니다"
       },
+      "paths": {
+        "appData": "앱 데이터:",
+        "models": "모델:",
+        "settings": "설정:"
+      },
       "pasteDelay": {
         "title": "붙여넣기 지연 (이전)",
         "description": "텍스트를 복사한 후 붙여넣기 키 입력을 보내기 전의 지연 시간(밀리초). 아무것도 붙여넣어지지 않으면 늘리세요."
@@ -592,25 +613,6 @@
         "verdictOk": "키 이벤트가 Handy에 정상적으로 도달하고 있습니다.",
         "verdictNoEvents": "이벤트가 감지되지 않았습니다. 테스트 중에 키를 누르셨나요?",
         "failed": "진단 실패: {{error}}"
-      },
-      "paths": {
-        "appData": "앱 데이터:",
-        "models": "모델:",
-        "settings": "설정:"
-      },
-      "whatsNewPreview": {
-        "title": "새 소식 미리보기",
-        "description": "최신 내장 릴리스 노트를 본 것으로 표시하지 않고 엽니다",
-        "button": "미리보기",
-        "noNotes": "내장 릴리스 노트를 찾을 수 없습니다",
-        "error": "릴리스 노트를 미리 볼 수 없습니다"
-      },
-      "onboardingPreview": {
-        "title": "온보딩 미리보기",
-        "description": "권한, 모델 또는 완료 상태를 변경하지 않고 온보딩 화면을 미리 봅니다",
-        "permissionsButton": "권한",
-        "modelsButton": "모델 선택",
-        "exitButton": "미리보기 종료"
       }
     },
     "about": {
@@ -618,6 +620,10 @@
       "version": {
         "title": "버전",
         "description": "Handy의 현재 버전"
+      },
+      "whatsNewUpdates": {
+        "label": "새 소식 표시",
+        "description": "Handy 업데이트 후 릴리스 노트를 표시합니다"
       },
       "appDataDirectory": {
         "title": "앱 데이터 디렉토리",
@@ -640,10 +646,6 @@
           "description": "OpenAI의 Whisper 자동 음성 인식 모델의 고성능 추론",
           "details": "Handy는 빠르고 로컬 음성-텍스트 처리를 위해 ggml를 사용합니다. Georgi Gerganov와 기여자들의 놀라운 작업에 감사드립니다."
         }
-      },
-      "whatsNewUpdates": {
-        "label": "새 소식 표시",
-        "description": "Handy 업데이트 후 릴리스 노트를 표시합니다"
       }
     }
   },
@@ -661,6 +663,9 @@
     "portableUpdateButton": "설치 프로그램 다운로드",
     "portableUpdateBrowseMessage": "포터블 설치는 자동으로 업데이트할 수 없습니다. GitHub Releases에서 사용 중인 시스템에 맞는 최신 버전을 다운로드해 같은 폴더에 설치하세요. Data/ 폴더(설정, 모델, 녹음)는 그대로 유지됩니다.",
     "portableUpdateBrowseButton": "GitHub Releases 열기"
+  },
+  "whatsNew": {
+    "title": "Handy v{{version}}의 새 소식"
   },
   "common": {
     "loading": "로딩 중...",
@@ -711,9 +716,6 @@
     "processing": "처리 중...",
     "loadingModel": "모델 로딩 중..."
   },
-  "whatsNew": {
-    "title": "Handy v{{version}}의 새 소식"
-  },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}}이(가) 단축키 1개를 차단하고 있을 수 있습니다",
     "blockedWithCulprit_other": "{{name}}이(가) 단축키 {{count}}개를 차단하고 있을 수 있습니다",
@@ -724,5 +726,114 @@
     "learnMore": "해결 방법",
     "recorderBlocked": "지금은 단축키를 등록할 수 없습니다. macOS Secure Input이 키 이벤트를 차단하고 있습니다. Secure Input 경고를 먼저 해결하세요.",
     "dismiss": "닫기"
+  },
+  "transcript": {
+    "title": "Transcript",
+    "description": "Live recognition results. Italic text is still being recognized and may change; confirmed text has been finalized.",
+    "empty": "No speech recognized yet. Start dictating to see results here.",
+    "confirmed": "Confirmed",
+    "recognizing": "Recognizing",
+    "actionsTitle": "Transcript actions",
+    "finalsOnly": "Confirmed text only",
+    "finalsOnlyDescription": "Copy and export only the finalized segments, excluding anything still being recognized.",
+    "copy": "Copy",
+    "export": "Export JSON",
+    "clear": "Clear",
+    "copied": "Copied to clipboard.",
+    "exported": "Exported to {{path}}",
+    "save": "Save",
+    "cancel": "Cancel",
+    "editHint": "Click to edit this segment. Editing marks it confirmed.",
+    "uploadTitle": "Upload to your backend",
+    "uploadDescription": "Uploads the transcript as JSON to the endpoint configured in Voice API. Nothing is uploaded unless you press the button below.",
+    "willUpload": "This will be sent",
+    "session": "Session",
+    "language": "Language",
+    "segments": "Segments",
+    "confirmedShort": "confirmed",
+    "nothingToUpload": "Nothing to upload yet.",
+    "uploadNow": "Upload now",
+    "uploading": "Uploading…",
+    "uploadManualNote": "Manual only — this fork never uploads automatically.",
+    "uploaded": "Uploaded (HTTP {{status}}, {{attempts}} attempt(s)).",
+    "uploadSkipped": "Nothing was uploaded.",
+    "continuous": {
+      "title": "Continuous listening",
+      "enabledHint": "When on, the transcription shortcut can start continuous listening. When off, the shortcut does nothing.",
+      "start": "Start continuous",
+      "stop": "Stop continuous",
+      "running": "Recording continuously",
+      "idle": "Idle",
+      "elapsed": "Elapsed",
+      "segments": "Segments",
+      "transcribing": "Transcribing",
+      "startedNotice": "Continuous transcription started.",
+      "stoppedNotice": "Continuous transcription stopped.",
+      "pauseMs": "Pause to end a segment (ms)",
+      "maxSegmentMs": "Maximum segment length (ms)",
+      "bridgeTitle": "Integration bridge",
+      "bridgeDescription": "Sends heartbeat and transcript events to the local verification tool. Off unless you turn it on. Loopback or https only.",
+      "bridgeOn": "Enabled",
+      "bridgeOff": "Disabled",
+      "bridgeSaved": "Endpoint saved.",
+      "bridgeDefaultEndpoint": "http://127.0.0.1:8765",
+      "save": "Save",
+      "sent": "Events sent",
+      "heartbeats": "Heartbeats",
+      "failed": "Failed",
+      "silenceLevel": "Silence threshold (0.05-0.95)",
+      "armedNotice": "Continuous listening armed. Press your transcription shortcut to start or stop.",
+      "disarmedNotice": "Continuous listening disarmed. The shortcut behaves as before."
+    }
+  },
+  "voiceApi": {
+    "endpointTitle": "Endpoint",
+    "endpointDescription": "Where transcripts are sent. HTTPS is required unless you explicitly allow plain HTTP for a local backend.",
+    "baseUrl": "Base URL",
+    "baseUrlDescription": "For example https://api.example.com/v1. A trailing slash is ignored.",
+    "endpointPath": "Endpoint path",
+    "endpointPathDescription": "Appended to the base URL. A leading slash resets to the host root; a full URL replaces the base entirely.",
+    "method": "HTTP method",
+    "methodDescription": "POST, PUT or PATCH.",
+    "contentType": "Content-Type",
+    "contentTypeDescription": "Sent as the request Content-Type header.",
+    "bodyTitle": "Request body",
+    "bodyDescription": "Backends disagree about request shapes, so the body is configurable rather than assumed.",
+    "bodyFormat": "Body format",
+    "bodyFormatDescription": "How the transcript is placed in the request.",
+    "bodyRaw": "Transcript document",
+    "bodyWrapped": "Wrapped in a field",
+    "bodyTemplate": "Custom JSON template",
+    "wrapField": "Wrapping field",
+    "wrapFieldDescription": "The transcript is nested under this key, e.g. {\"transcript\": {…}}.",
+    "template": "JSON template",
+    "templateDescription": "A JSON object containing {{transcript}}, which is replaced by the transcript document.",
+    "authTitle": "Authentication",
+    "authDescription": "The API key is stored in the operating system credential store — never in a settings file, a transcript export, or a log.",
+    "apiKey": "API key",
+    "apiKeyStoredIn": "A key is stored in the {{where}}.",
+    "apiKeyNotSet": "No API key stored.",
+    "saveKey": "Save key",
+    "clearKey": "Remove key",
+    "apiKeyNote": "The key is write-only: the app never displays it again after saving.",
+    "customHeaders": "Custom headers",
+    "customHeadersDescription": "One header per line as Name: Value. Authorization is managed by the key above.",
+    "behaviourTitle": "Behaviour",
+    "behaviourDescription": "Timeouts, retries and duplicate protection for uploads.",
+    "timeout": "Timeout (ms)",
+    "timeoutDescription": "How long a single request may take before it fails.",
+    "maxAttempts": "Maximum attempts",
+    "maxAttemptsDescription": "Total tries including the first. Only timeouts, connection failures, HTTP 429 and 5xx are retried.",
+    "idempotency": "Send idempotency key",
+    "idempotencyDescription": "Sends an Idempotency-Key derived from the session and the exact request body, so a backend can recognise a retry instead of storing it twice. Only helps if the server honours it.",
+    "allowHttp": "Allow insecure HTTP",
+    "allowHttpDescription": "Off by default. Only enable this for a backend on localhost; it sends your transcript in cleartext.",
+    "save": "Save configuration",
+    "working": "Working…",
+    "testConnection": "Test connection",
+    "saved": "Configuration saved.",
+    "keySaved": "API key saved to the OS credential store.",
+    "keyCleared": "API key removed.",
+    "testResult": "Test result"
   }
 }

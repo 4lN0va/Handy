@@ -16,7 +16,9 @@
     "postProcessing": "Post-traitement",
     "history": "Historique",
     "debug": "Débogage",
-    "about": "À propos"
+    "about": "À propos",
+    "transcript": "Transcript",
+    "voiceApi": "Voice API"
   },
   "onboarding": {
     "subtitle": "Pour commencer, choisissez un modèle de transcription",
@@ -122,6 +124,7 @@
   },
   "modelSelector": {
     "custom": "Personnalisé",
+    "legacy": "Hérité",
     "streaming": "Streaming",
     "active": "Actif",
     "switching": "Changement...",
@@ -141,42 +144,21 @@
     "noModelDownloadRequired": "Aucun Modèle - Téléchargement Requis",
     "deleteModel": "Supprimer {{modelName}}",
     "downloadSpeed": "{{speed}} Mo/s",
-    "capabilities": {
-      "languageSelection": "Prend en charge plusieurs langues d'entrée",
-      "languageCount": "{{total}} langues",
-      "translation": "Peut traduire en anglais",
-      "translate": "Traduire en anglais",
-      "singleLanguage": "Prend en charge uniquement cette langue",
-      "languageOnly": "{{language}} uniquement",
-      "streaming": "Affiche la transcription en direct pendant que vous parlez"
-    },
     "cancel": "Annuler",
     "cancelDownload": "Annuler le téléchargement",
-    "legacy": "Hérité"
+    "capabilities": {
+      "languageSelection": "Prend en charge plusieurs langues d'entrée",
+      "singleLanguage": "Prend en charge uniquement cette langue",
+      "languageCount": "{{total}} langues",
+      "languageOnly": "{{language}} uniquement",
+      "translation": "Peut traduire en anglais",
+      "translate": "Traduire en anglais",
+      "streaming": "Affiche la transcription en direct pendant que vous parlez"
+    }
   },
   "settings": {
     "modelSettings": {
       "title": "Paramètres de {{model}}"
-    },
-    "models": {
-      "title": "Modèles de Transcription",
-      "description": "Sélectionnez un modèle de transcription ou téléchargez des modèles supplémentaires. Différents modèles offrent différents niveaux de précision et de vitesse.",
-      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer {{modelName}} ? Vous devrez le télécharger à nouveau pour l'utiliser.",
-      "deleteActiveConfirm": "{{modelName}} est votre modèle actif. Le supprimer arrêtera les transcriptions jusqu'à ce que vous sélectionniez un nouveau modèle. Êtes-vous sûr ?",
-      "deleteTitle": "Supprimer le modèle",
-      "filters": {
-        "allLanguages": "Toutes les langues",
-        "streaming": "Filtrer les modèles prenant en charge la transcription en direct",
-        "translation": "Filtrer les modèles prenant en charge la traduction vers l'anglais"
-      },
-      "noModelsMatch": "Aucun modèle ne correspond à ce filtre.",
-      "yourModels": "Modèles téléchargés",
-      "availableModels": "Disponibles au téléchargement",
-      "searchPlaceholder": "Rechercher des modèles par nom…",
-      "rescan": {
-        "label": "Réanalyser",
-        "tooltip": "Réanalyser pour détecter les modèles ajoutés au dossier des modèles ou au cache Hugging Face en dehors de Handy"
-      }
     },
     "general": {
       "title": "Général",
@@ -228,6 +210,26 @@
           "toggle": "Appuyez sur le raccourci pour démarrer l'enregistrement, appuyez à nouveau pour arrêter"
         }
       }
+    },
+    "models": {
+      "title": "Modèles de Transcription",
+      "description": "Sélectionnez un modèle de transcription ou téléchargez des modèles supplémentaires. Différents modèles offrent différents niveaux de précision et de vitesse.",
+      "searchPlaceholder": "Rechercher des modèles par nom…",
+      "yourModels": "Modèles téléchargés",
+      "availableModels": "Disponibles au téléchargement",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer {{modelName}} ? Vous devrez le télécharger à nouveau pour l'utiliser.",
+      "deleteActiveConfirm": "{{modelName}} est votre modèle actif. Le supprimer arrêtera les transcriptions jusqu'à ce que vous sélectionniez un nouveau modèle. Êtes-vous sûr ?",
+      "deleteTitle": "Supprimer le modèle",
+      "filters": {
+        "allLanguages": "Toutes les langues",
+        "streaming": "Filtrer les modèles prenant en charge la transcription en direct",
+        "translation": "Filtrer les modèles prenant en charge la traduction vers l'anglais"
+      },
+      "rescan": {
+        "label": "Réanalyser",
+        "tooltip": "Réanalyser pour détecter les modèles ajoutés au dossier des modèles ou au cache Hugging Face en dehors de Handy"
+      },
+      "noModelsMatch": "Aucun modèle ne correspond à ce filtre."
     },
     "sound": {
       "title": "Son",
@@ -505,6 +507,20 @@
         "description": "Vérifier automatiquement les nouvelles versions de Handy",
         "lockedDescription": "Désactivé par la configuration système (HANDY_DISABLE_UPDATER)"
       },
+      "whatsNewPreview": {
+        "title": "Aperçu des nouveautés",
+        "description": "Ouvrir la dernière note de version intégrée sans la marquer comme vue",
+        "button": "Aperçu",
+        "noNotes": "Aucune note de version intégrée trouvée",
+        "error": "Impossible d’afficher l’aperçu des notes de version"
+      },
+      "onboardingPreview": {
+        "title": "Aperçu de la configuration initiale",
+        "description": "Prévisualisez les écrans de configuration sans modifier les autorisations, les modèles ou l’état d’achèvement",
+        "permissionsButton": "Autorisations",
+        "modelsButton": "Sélection du modèle",
+        "exitButton": "Quitter l’aperçu"
+      },
       "soundTheme": {
         "label": "Thème sonore",
         "description": "Choisir un thème sonore pour les retours de début et de fin d'enregistrement"
@@ -597,20 +613,6 @@
         "verdictOk": "Les événements clavier atteignent Handy normalement.",
         "verdictNoEvents": "Aucun événement capturé : avez-vous appuyé sur des touches pendant le test ?",
         "failed": "Échec du diagnostic : {{error}}"
-      },
-      "whatsNewPreview": {
-        "title": "Aperçu des nouveautés",
-        "description": "Ouvrir la dernière note de version intégrée sans la marquer comme vue",
-        "button": "Aperçu",
-        "noNotes": "Aucune note de version intégrée trouvée",
-        "error": "Impossible d’afficher l’aperçu des notes de version"
-      },
-      "onboardingPreview": {
-        "title": "Aperçu de la configuration initiale",
-        "description": "Prévisualisez les écrans de configuration sans modifier les autorisations, les modèles ou l’état d’achèvement",
-        "permissionsButton": "Autorisations",
-        "modelsButton": "Sélection du modèle",
-        "exitButton": "Quitter l’aperçu"
       }
     },
     "about": {
@@ -618,6 +620,10 @@
       "version": {
         "title": "Version",
         "description": "Version actuelle de Handy"
+      },
+      "whatsNewUpdates": {
+        "label": "Afficher les nouveautés",
+        "description": "Afficher les notes de version après les mises à jour de Handy"
       },
       "appDataDirectory": {
         "title": "Emplacement des données de l'application",
@@ -640,10 +646,6 @@
           "description": "Inférence haute performance du modèle de reconnaissance vocale automatique Whisper d'OpenAI",
           "details": "Handy utilise ggml pour un traitement rapide et local de la parole en texte. Merci au travail incroyable de Georgi Gerganov et des contributeurs."
         }
-      },
-      "whatsNewUpdates": {
-        "label": "Afficher les nouveautés",
-        "description": "Afficher les notes de version après les mises à jour de Handy"
       }
     }
   },
@@ -661,6 +663,9 @@
     "portableUpdateButton": "Télécharger l’installateur",
     "portableUpdateBrowseMessage": "Les installations portables ne peuvent pas être mises à jour automatiquement. Téléchargez la dernière version correspondant à votre système depuis GitHub Releases et installez-la dans le même dossier : votre dossier Data/ (paramètres, modèles, enregistrements) est conservé.",
     "portableUpdateBrowseButton": "Ouvrir GitHub Releases"
+  },
+  "whatsNew": {
+    "title": "Nouveautés de Handy v{{version}}"
   },
   "common": {
     "loading": "Chargement...",
@@ -711,9 +716,6 @@
     "processing": "Traitement...",
     "loadingModel": "Chargement du modèle..."
   },
-  "whatsNew": {
-    "title": "Nouveautés de Handy v{{version}}"
-  },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} bloque peut-être 1 raccourci",
     "blockedWithCulprit_other": "{{name}} bloque peut-être {{count}} raccourcis",
@@ -724,5 +726,114 @@
     "learnMore": "Comment résoudre ce problème",
     "recorderBlocked": "Impossible d'enregistrer un raccourci pour le moment : Secure Input de macOS bloque les événements clavier. Résolvez d'abord l'avertissement Secure Input.",
     "dismiss": "Ignorer"
+  },
+  "transcript": {
+    "title": "Transcript",
+    "description": "Live recognition results. Italic text is still being recognized and may change; confirmed text has been finalized.",
+    "empty": "No speech recognized yet. Start dictating to see results here.",
+    "confirmed": "Confirmed",
+    "recognizing": "Recognizing",
+    "actionsTitle": "Transcript actions",
+    "finalsOnly": "Confirmed text only",
+    "finalsOnlyDescription": "Copy and export only the finalized segments, excluding anything still being recognized.",
+    "copy": "Copy",
+    "export": "Export JSON",
+    "clear": "Clear",
+    "copied": "Copied to clipboard.",
+    "exported": "Exported to {{path}}",
+    "save": "Save",
+    "cancel": "Cancel",
+    "editHint": "Click to edit this segment. Editing marks it confirmed.",
+    "uploadTitle": "Upload to your backend",
+    "uploadDescription": "Uploads the transcript as JSON to the endpoint configured in Voice API. Nothing is uploaded unless you press the button below.",
+    "willUpload": "This will be sent",
+    "session": "Session",
+    "language": "Language",
+    "segments": "Segments",
+    "confirmedShort": "confirmed",
+    "nothingToUpload": "Nothing to upload yet.",
+    "uploadNow": "Upload now",
+    "uploading": "Uploading…",
+    "uploadManualNote": "Manual only — this fork never uploads automatically.",
+    "uploaded": "Uploaded (HTTP {{status}}, {{attempts}} attempt(s)).",
+    "uploadSkipped": "Nothing was uploaded.",
+    "continuous": {
+      "title": "Continuous listening",
+      "enabledHint": "When on, the transcription shortcut can start continuous listening. When off, the shortcut does nothing.",
+      "start": "Start continuous",
+      "stop": "Stop continuous",
+      "running": "Recording continuously",
+      "idle": "Idle",
+      "elapsed": "Elapsed",
+      "segments": "Segments",
+      "transcribing": "Transcribing",
+      "startedNotice": "Continuous transcription started.",
+      "stoppedNotice": "Continuous transcription stopped.",
+      "pauseMs": "Pause to end a segment (ms)",
+      "maxSegmentMs": "Maximum segment length (ms)",
+      "bridgeTitle": "Integration bridge",
+      "bridgeDescription": "Sends heartbeat and transcript events to the local verification tool. Off unless you turn it on. Loopback or https only.",
+      "bridgeOn": "Enabled",
+      "bridgeOff": "Disabled",
+      "bridgeSaved": "Endpoint saved.",
+      "bridgeDefaultEndpoint": "http://127.0.0.1:8765",
+      "save": "Save",
+      "sent": "Events sent",
+      "heartbeats": "Heartbeats",
+      "failed": "Failed",
+      "silenceLevel": "Silence threshold (0.05-0.95)",
+      "armedNotice": "Continuous listening armed. Press your transcription shortcut to start or stop.",
+      "disarmedNotice": "Continuous listening disarmed. The shortcut behaves as before."
+    }
+  },
+  "voiceApi": {
+    "endpointTitle": "Endpoint",
+    "endpointDescription": "Where transcripts are sent. HTTPS is required unless you explicitly allow plain HTTP for a local backend.",
+    "baseUrl": "Base URL",
+    "baseUrlDescription": "For example https://api.example.com/v1. A trailing slash is ignored.",
+    "endpointPath": "Endpoint path",
+    "endpointPathDescription": "Appended to the base URL. A leading slash resets to the host root; a full URL replaces the base entirely.",
+    "method": "HTTP method",
+    "methodDescription": "POST, PUT or PATCH.",
+    "contentType": "Content-Type",
+    "contentTypeDescription": "Sent as the request Content-Type header.",
+    "bodyTitle": "Request body",
+    "bodyDescription": "Backends disagree about request shapes, so the body is configurable rather than assumed.",
+    "bodyFormat": "Body format",
+    "bodyFormatDescription": "How the transcript is placed in the request.",
+    "bodyRaw": "Transcript document",
+    "bodyWrapped": "Wrapped in a field",
+    "bodyTemplate": "Custom JSON template",
+    "wrapField": "Wrapping field",
+    "wrapFieldDescription": "The transcript is nested under this key, e.g. {\"transcript\": {…}}.",
+    "template": "JSON template",
+    "templateDescription": "A JSON object containing {{transcript}}, which is replaced by the transcript document.",
+    "authTitle": "Authentication",
+    "authDescription": "The API key is stored in the operating system credential store — never in a settings file, a transcript export, or a log.",
+    "apiKey": "API key",
+    "apiKeyStoredIn": "A key is stored in the {{where}}.",
+    "apiKeyNotSet": "No API key stored.",
+    "saveKey": "Save key",
+    "clearKey": "Remove key",
+    "apiKeyNote": "The key is write-only: the app never displays it again after saving.",
+    "customHeaders": "Custom headers",
+    "customHeadersDescription": "One header per line as Name: Value. Authorization is managed by the key above.",
+    "behaviourTitle": "Behaviour",
+    "behaviourDescription": "Timeouts, retries and duplicate protection for uploads.",
+    "timeout": "Timeout (ms)",
+    "timeoutDescription": "How long a single request may take before it fails.",
+    "maxAttempts": "Maximum attempts",
+    "maxAttemptsDescription": "Total tries including the first. Only timeouts, connection failures, HTTP 429 and 5xx are retried.",
+    "idempotency": "Send idempotency key",
+    "idempotencyDescription": "Sends an Idempotency-Key derived from the session and the exact request body, so a backend can recognise a retry instead of storing it twice. Only helps if the server honours it.",
+    "allowHttp": "Allow insecure HTTP",
+    "allowHttpDescription": "Off by default. Only enable this for a backend on localhost; it sends your transcript in cleartext.",
+    "save": "Save configuration",
+    "working": "Working…",
+    "testConnection": "Test connection",
+    "saved": "Configuration saved.",
+    "keySaved": "API key saved to the OS credential store.",
+    "keyCleared": "API key removed.",
+    "testResult": "Test result"
   }
 }

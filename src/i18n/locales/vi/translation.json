@@ -16,7 +16,9 @@
     "postProcessing": "Xử lý sau",
     "history": "Lịch sử",
     "debug": "Gỡ lỗi",
-    "about": "Giới thiệu"
+    "about": "Giới thiệu",
+    "transcript": "Transcript",
+    "voiceApi": "Voice API"
   },
   "onboarding": {
     "subtitle": "Để bắt đầu, hãy chọn một mô hình chuyển đổi giọng nói",
@@ -122,6 +124,7 @@
   },
   "modelSelector": {
     "custom": "Tùy chỉnh",
+    "legacy": "Cũ",
     "streaming": "Truyền trực tiếp",
     "active": "Đang hoạt động",
     "switching": "Đang chuyển...",
@@ -141,42 +144,21 @@
     "noModelDownloadRequired": "Chưa Có Mô Hình - Cần Tải Xuống",
     "deleteModel": "Xóa {{modelName}}",
     "downloadSpeed": "{{speed}} MB/s",
-    "capabilities": {
-      "languageSelection": "Hỗ trợ nhiều ngôn ngữ đầu vào",
-      "languageCount": "{{total}} ngôn ngữ",
-      "translation": "Có thể dịch sang tiếng Anh",
-      "translate": "Dịch sang tiếng Anh",
-      "singleLanguage": "Chỉ hỗ trợ ngôn ngữ này",
-      "languageOnly": "Chỉ {{language}}",
-      "streaming": "Hiển thị phiên âm trực tiếp khi bạn nói"
-    },
     "cancel": "Hủy",
     "cancelDownload": "Hủy tải xuống",
-    "legacy": "Cũ"
+    "capabilities": {
+      "languageSelection": "Hỗ trợ nhiều ngôn ngữ đầu vào",
+      "singleLanguage": "Chỉ hỗ trợ ngôn ngữ này",
+      "languageCount": "{{total}} ngôn ngữ",
+      "languageOnly": "Chỉ {{language}}",
+      "translation": "Có thể dịch sang tiếng Anh",
+      "translate": "Dịch sang tiếng Anh",
+      "streaming": "Hiển thị phiên âm trực tiếp khi bạn nói"
+    }
   },
   "settings": {
     "modelSettings": {
       "title": "Cài đặt {{model}}"
-    },
-    "models": {
-      "title": "Mô hình chuyển đổi",
-      "description": "Chọn mô hình chuyển đổi hoặc tải thêm mô hình. Các mô hình khác nhau có mức độ chính xác và tốc độ khác nhau.",
-      "deleteConfirm": "Bạn có chắc chắn muốn xóa {{modelName}}? Bạn sẽ cần tải lại để sử dụng.",
-      "deleteActiveConfirm": "{{modelName}} là mô hình đang hoạt động của bạn. Xóa nó sẽ dừng phiên âm cho đến khi bạn chọn một mô hình mới. Bạn có chắc không?",
-      "deleteTitle": "Xóa mô hình",
-      "filters": {
-        "allLanguages": "Tất cả ngôn ngữ",
-        "streaming": "Lọc các mô hình hỗ trợ phiên âm trực tiếp",
-        "translation": "Lọc các mô hình hỗ trợ dịch sang tiếng Anh"
-      },
-      "noModelsMatch": "Không có mô hình nào khớp với bộ lọc này.",
-      "yourModels": "Mô hình đã tải",
-      "availableModels": "Có sẵn để tải xuống",
-      "searchPlaceholder": "Tìm mô hình theo tên…",
-      "rescan": {
-        "label": "Quét lại",
-        "tooltip": "Quét lại các mô hình được thêm vào thư mục mô hình hoặc bộ nhớ đệm Hugging Face bên ngoài Handy"
-      }
     },
     "general": {
       "title": "Chung",
@@ -228,6 +210,26 @@
           "toggle": "Nhấn phím tắt để bắt đầu ghi âm, nhấn lại để dừng"
         }
       }
+    },
+    "models": {
+      "title": "Mô hình chuyển đổi",
+      "description": "Chọn mô hình chuyển đổi hoặc tải thêm mô hình. Các mô hình khác nhau có mức độ chính xác và tốc độ khác nhau.",
+      "searchPlaceholder": "Tìm mô hình theo tên…",
+      "yourModels": "Mô hình đã tải",
+      "availableModels": "Có sẵn để tải xuống",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa {{modelName}}? Bạn sẽ cần tải lại để sử dụng.",
+      "deleteActiveConfirm": "{{modelName}} là mô hình đang hoạt động của bạn. Xóa nó sẽ dừng phiên âm cho đến khi bạn chọn một mô hình mới. Bạn có chắc không?",
+      "deleteTitle": "Xóa mô hình",
+      "filters": {
+        "allLanguages": "Tất cả ngôn ngữ",
+        "streaming": "Lọc các mô hình hỗ trợ phiên âm trực tiếp",
+        "translation": "Lọc các mô hình hỗ trợ dịch sang tiếng Anh"
+      },
+      "rescan": {
+        "label": "Quét lại",
+        "tooltip": "Quét lại các mô hình được thêm vào thư mục mô hình hoặc bộ nhớ đệm Hugging Face bên ngoài Handy"
+      },
+      "noModelsMatch": "Không có mô hình nào khớp với bộ lọc này."
     },
     "sound": {
       "title": "Âm thanh",
@@ -505,6 +507,20 @@
         "description": "Tự động kiểm tra phiên bản mới của Handy",
         "lockedDescription": "Đã bị vô hiệu hóa bởi cấu hình hệ thống (HANDY_DISABLE_UPDATER)"
       },
+      "whatsNewPreview": {
+        "title": "Xem trước điểm mới",
+        "description": "Mở ghi chú phát hành mới nhất được đóng gói mà không đánh dấu là đã xem",
+        "button": "Xem trước",
+        "noNotes": "Không tìm thấy ghi chú phát hành được đóng gói",
+        "error": "Không thể xem trước ghi chú phát hành"
+      },
+      "onboardingPreview": {
+        "title": "Xem trước thiết lập ban đầu",
+        "description": "Xem trước các màn hình thiết lập mà không thay đổi quyền, mô hình hoặc trạng thái hoàn tất",
+        "permissionsButton": "Quyền",
+        "modelsButton": "Chọn mô hình",
+        "exitButton": "Thoát xem trước"
+      },
       "soundTheme": {
         "label": "Chủ đề âm thanh",
         "description": "Chọn chủ đề âm thanh cho phản hồi bắt đầu và kết thúc ghi âm"
@@ -597,20 +613,6 @@
         "verdictOk": "Các sự kiện phím đang đến Handy bình thường.",
         "verdictNoEvents": "Không ghi nhận sự kiện nào — bạn có bấm phím nào trong lúc kiểm tra không?",
         "failed": "Chẩn đoán thất bại: {{error}}"
-      },
-      "whatsNewPreview": {
-        "title": "Xem trước điểm mới",
-        "description": "Mở ghi chú phát hành mới nhất được đóng gói mà không đánh dấu là đã xem",
-        "button": "Xem trước",
-        "noNotes": "Không tìm thấy ghi chú phát hành được đóng gói",
-        "error": "Không thể xem trước ghi chú phát hành"
-      },
-      "onboardingPreview": {
-        "title": "Xem trước thiết lập ban đầu",
-        "description": "Xem trước các màn hình thiết lập mà không thay đổi quyền, mô hình hoặc trạng thái hoàn tất",
-        "permissionsButton": "Quyền",
-        "modelsButton": "Chọn mô hình",
-        "exitButton": "Thoát xem trước"
       }
     },
     "about": {
@@ -618,6 +620,10 @@
       "version": {
         "title": "Phiên bản",
         "description": "Phiên bản hiện tại của Handy"
+      },
+      "whatsNewUpdates": {
+        "label": "Hiển thị điểm mới",
+        "description": "Hiển thị ghi chú phát hành sau khi Handy cập nhật"
       },
       "appDataDirectory": {
         "title": "Thư mục dữ liệu ứng dụng",
@@ -640,10 +646,6 @@
           "description": "Suy luận hiệu suất cao của mô hình nhận dạng giọng nói tự động Whisper của OpenAI",
           "details": "Handy sử dụng ggml để xử lý chuyển đổi giọng nói thành văn bản nhanh, cục bộ. Cảm ơn công việc tuyệt vời của Georgi Gerganov và các cộng tác viên."
         }
-      },
-      "whatsNewUpdates": {
-        "label": "Hiển thị điểm mới",
-        "description": "Hiển thị ghi chú phát hành sau khi Handy cập nhật"
       }
     }
   },
@@ -661,6 +663,9 @@
     "portableUpdateButton": "Tải trình cài đặt",
     "portableUpdateBrowseMessage": "Bản cài đặt di động không thể cập nhật tự động. Hãy tải phiên bản mới nhất phù hợp với hệ thống của bạn từ GitHub Releases và cài vào cùng thư mục — thư mục Data/ (cài đặt, mô hình, bản ghi) của bạn được giữ nguyên.",
     "portableUpdateBrowseButton": "Mở GitHub Releases"
+  },
+  "whatsNew": {
+    "title": "Điểm mới trong Handy v{{version}}"
   },
   "common": {
     "loading": "Đang tải...",
@@ -711,9 +716,6 @@
     "processing": "Đang xử lý...",
     "loadingModel": "Đang tải mô hình..."
   },
-  "whatsNew": {
-    "title": "Điểm mới trong Handy v{{version}}"
-  },
   "secureInput": {
     "blockedWithCulprit_one": "{{name}} có thể đang chặn 1 phím tắt",
     "blockedWithCulprit_other": "{{name}} có thể đang chặn {{count}} phím tắt",
@@ -724,5 +726,114 @@
     "learnMore": "Cách khắc phục",
     "recorderBlocked": "Hiện không thể ghi phím tắt — Secure Input của macOS đang chặn các sự kiện phím. Hãy xử lý cảnh báo Secure Input trước.",
     "dismiss": "Bỏ qua"
+  },
+  "transcript": {
+    "title": "Transcript",
+    "description": "Live recognition results. Italic text is still being recognized and may change; confirmed text has been finalized.",
+    "empty": "No speech recognized yet. Start dictating to see results here.",
+    "confirmed": "Confirmed",
+    "recognizing": "Recognizing",
+    "actionsTitle": "Transcript actions",
+    "finalsOnly": "Confirmed text only",
+    "finalsOnlyDescription": "Copy and export only the finalized segments, excluding anything still being recognized.",
+    "copy": "Copy",
+    "export": "Export JSON",
+    "clear": "Clear",
+    "copied": "Copied to clipboard.",
+    "exported": "Exported to {{path}}",
+    "save": "Save",
+    "cancel": "Cancel",
+    "editHint": "Click to edit this segment. Editing marks it confirmed.",
+    "uploadTitle": "Upload to your backend",
+    "uploadDescription": "Uploads the transcript as JSON to the endpoint configured in Voice API. Nothing is uploaded unless you press the button below.",
+    "willUpload": "This will be sent",
+    "session": "Session",
+    "language": "Language",
+    "segments": "Segments",
+    "confirmedShort": "confirmed",
+    "nothingToUpload": "Nothing to upload yet.",
+    "uploadNow": "Upload now",
+    "uploading": "Uploading…",
+    "uploadManualNote": "Manual only — this fork never uploads automatically.",
+    "uploaded": "Uploaded (HTTP {{status}}, {{attempts}} attempt(s)).",
+    "uploadSkipped": "Nothing was uploaded.",
+    "continuous": {
+      "title": "Continuous listening",
+      "enabledHint": "When on, the transcription shortcut can start continuous listening. When off, the shortcut does nothing.",
+      "start": "Start continuous",
+      "stop": "Stop continuous",
+      "running": "Recording continuously",
+      "idle": "Idle",
+      "elapsed": "Elapsed",
+      "segments": "Segments",
+      "transcribing": "Transcribing",
+      "startedNotice": "Continuous transcription started.",
+      "stoppedNotice": "Continuous transcription stopped.",
+      "pauseMs": "Pause to end a segment (ms)",
+      "maxSegmentMs": "Maximum segment length (ms)",
+      "bridgeTitle": "Integration bridge",
+      "bridgeDescription": "Sends heartbeat and transcript events to the local verification tool. Off unless you turn it on. Loopback or https only.",
+      "bridgeOn": "Enabled",
+      "bridgeOff": "Disabled",
+      "bridgeSaved": "Endpoint saved.",
+      "bridgeDefaultEndpoint": "http://127.0.0.1:8765",
+      "save": "Save",
+      "sent": "Events sent",
+      "heartbeats": "Heartbeats",
+      "failed": "Failed",
+      "silenceLevel": "Silence threshold (0.05-0.95)",
+      "armedNotice": "Continuous listening armed. Press your transcription shortcut to start or stop.",
+      "disarmedNotice": "Continuous listening disarmed. The shortcut behaves as before."
+    }
+  },
+  "voiceApi": {
+    "endpointTitle": "Endpoint",
+    "endpointDescription": "Where transcripts are sent. HTTPS is required unless you explicitly allow plain HTTP for a local backend.",
+    "baseUrl": "Base URL",
+    "baseUrlDescription": "For example https://api.example.com/v1. A trailing slash is ignored.",
+    "endpointPath": "Endpoint path",
+    "endpointPathDescription": "Appended to the base URL. A leading slash resets to the host root; a full URL replaces the base entirely.",
+    "method": "HTTP method",
+    "methodDescription": "POST, PUT or PATCH.",
+    "contentType": "Content-Type",
+    "contentTypeDescription": "Sent as the request Content-Type header.",
+    "bodyTitle": "Request body",
+    "bodyDescription": "Backends disagree about request shapes, so the body is configurable rather than assumed.",
+    "bodyFormat": "Body format",
+    "bodyFormatDescription": "How the transcript is placed in the request.",
+    "bodyRaw": "Transcript document",
+    "bodyWrapped": "Wrapped in a field",
+    "bodyTemplate": "Custom JSON template",
+    "wrapField": "Wrapping field",
+    "wrapFieldDescription": "The transcript is nested under this key, e.g. {\"transcript\": {…}}.",
+    "template": "JSON template",
+    "templateDescription": "A JSON object containing {{transcript}}, which is replaced by the transcript document.",
+    "authTitle": "Authentication",
+    "authDescription": "The API key is stored in the operating system credential store — never in a settings file, a transcript export, or a log.",
+    "apiKey": "API key",
+    "apiKeyStoredIn": "A key is stored in the {{where}}.",
+    "apiKeyNotSet": "No API key stored.",
+    "saveKey": "Save key",
+    "clearKey": "Remove key",
+    "apiKeyNote": "The key is write-only: the app never displays it again after saving.",
+    "customHeaders": "Custom headers",
+    "customHeadersDescription": "One header per line as Name: Value. Authorization is managed by the key above.",
+    "behaviourTitle": "Behaviour",
+    "behaviourDescription": "Timeouts, retries and duplicate protection for uploads.",
+    "timeout": "Timeout (ms)",
+    "timeoutDescription": "How long a single request may take before it fails.",
+    "maxAttempts": "Maximum attempts",
+    "maxAttemptsDescription": "Total tries including the first. Only timeouts, connection failures, HTTP 429 and 5xx are retried.",
+    "idempotency": "Send idempotency key",
+    "idempotencyDescription": "Sends an Idempotency-Key derived from the session and the exact request body, so a backend can recognise a retry instead of storing it twice. Only helps if the server honours it.",
+    "allowHttp": "Allow insecure HTTP",
+    "allowHttpDescription": "Off by default. Only enable this for a backend on localhost; it sends your transcript in cleartext.",
+    "save": "Save configuration",
+    "working": "Working…",
+    "testConnection": "Test connection",
+    "saved": "Configuration saved.",
+    "keySaved": "API key saved to the OS credential store.",
+    "keyCleared": "API key removed.",
+    "testResult": "Test result"
   }
 }
