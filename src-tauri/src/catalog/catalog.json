@@ -36,7 +36,7 @@
       ],
       "default_quant": "Q8_0",
       "recommended": true,
-      "recommended_rank": 1
+      "recommended_rank": 2
     },
     {
       "id": "handy-computer/nemotron-3.5-asr-streaming-0.6b-gguf",
@@ -68,8 +68,8 @@
         {"filename": "nemotron-3.5-asr-streaming-0.6b-F32.gguf", "quant": "F32", "size_bytes": 2552277984, "sha256": "fbbc82e8e1084301a670fbc4d79c69c0c8980da506352fd83e74a182f38f5b78"}
       ],
       "default_quant": "Q8_0",
-      "recommended": true,
-      "recommended_rank": 2
+      "recommended": false,
+      "recommended_rank": null
     },
     {
       "id": "handy-computer/canary-180m-flash-gguf",
@@ -168,7 +168,7 @@
       ],
       "default_quant": "Q8_0",
       "recommended": true,
-      "recommended_rank": 5
+      "recommended_rank": 1
     },
     {
       "id": "handy-computer/Voxtral-Mini-4B-Realtime-2602-gguf",

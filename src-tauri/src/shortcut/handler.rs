@@ -34,6 +34,16 @@ pub fn handle_shortcut_event(
 ) {
     let settings = get_settings(app);
 
+    // Continuous listening owns the transcription shortcut while it is armed.
+    // Intercepted *before* the coordinator so that coordinator's state machine
+    // never sees these presses; see `handle_shortcut_event` for why ignoring the
+    // event one layer deeper left the key unable to stop or restart a session.
+    if is_transcribe_binding(binding_id)
+        && crate::managers::continuous::handle_shortcut_event(app, is_pressed)
+    {
+        return;
+    }
+
     // Transcribe bindings are handled by the coordinator.
     if is_transcribe_binding(binding_id) {
         if let Some(coordinator) = app.try_state::<TranscriptionCoordinator>() {

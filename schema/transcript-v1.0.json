@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cjpais/Handy/schema/transcript-v1.0.json",
+  "title": "Handy Voice Transcript",
+  "description": "A versioned transcription session: recognized segments (tentative and confirmed), plus non-fatal errors. Field names schemaversion/sessionid follow the product specification; schema_version/session_id are accepted as aliases on read.",
+  "type": "object",
+  "required": [
+    "schemaversion",
+    "sessionid",
+    "created_at",
+    "language",
+    "source",
+    "segments"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schemaversion": {
+      "description": "Schema version of this document.",
+      "type": "string",
+      "const": "1.0"
+    },
+    "sessionid": {
+      "description": "Unique identifier for this recording session. Used as the upload idempotency key, so it must be stable for the life of the session.",
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "description": "Session creation time, RFC 3339 UTC.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "updated_at": {
+      "description": "Last modification time, RFC 3339 UTC. Optional on read (defaults to created_at when absent); this exporter always writes it.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "language": {
+      "description": "Language tag for the recognized speech, e.g. zh-TW, zh-Hant, en.",
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "description": "Where the audio came from.",
+      "type": "string",
+      "minLength": 1,
+      "examples": ["microphone", "file", "system"]
+    },
+    "engine": {
+      "description": "Optional metadata about the engine that produced the text.",
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "model_id": { "type": "string" }
+      }
+    },
+    "segments": {
+      "description": "Recognized text in recognition order. A segment is addressed by segment_id and replaced in place as its revision advances, so tentative and confirmed text are never both appended.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "final"],
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "description": "Dense 1-based display position, unique within the document.",
+            "type": "integer",
+            "minimum": 1
+          },
+          "segment_id": {
+            "description": "Stable identity, repeated across revisions of the same segment. Unique within the document. Optional on read: a document without it is ingested by using the display id. This exporter always writes it.",
+            "type": "string",
+            "minLength": 1
+          },
+          "revision": {
+            "description": "Monotonic revision of this segment's text. Optional on read (defaults to 1); this exporter always writes it.",
+            "type": "integer",
+            "minimum": 1
+          },
+          "text": {
+            "description": "UTF-8 text for this revision. May legitimately be empty after a user edit.",
+            "type": "string"
+          },
+          "final": {
+            "description": "True when the text is confirmed and will not change.",
+            "type": "boolean"
+          },
+          "kind": {
+            "description": "Result kind. Optional on read; when absent it is derived from 'final'. When present it must agree with 'final'.",
+            "type": "string",
+            "enum": ["partial", "final", "error"]
+          },
+          "start_ms": {
+            "description": "Optional start offset in milliseconds. Not produced in the first phase.",
+            "type": ["integer", "null"]
+          },
+          "end_ms": {
+            "description": "Optional end offset in milliseconds. Not produced in the first phase.",
+            "type": ["integer", "null"]
+          }
+        }
+      }
+    },
+    "errors": {
+      "description": "Non-fatal failures recorded during the session. Never merged into segments.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["message", "at"],
+        "additionalProperties": true,
+        "properties": {
+          "message": { "type": "string", "minLength": 1 },
+          "at": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+          },
+          "segment_id": { "type": "string" }
+        }
+      }
+    }
+  }
+}

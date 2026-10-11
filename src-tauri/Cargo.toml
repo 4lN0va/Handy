@@ -60,7 +60,10 @@ vad-rs = { git = "https://github.com/cjpais/vad-rs", default-features = false }
 earshot = "1.2.2"
 enigo = "0.6.1"
 rodio = { git = "https://github.com/cjpais/rodio.git" }
-reqwest = { version = "0.12", features = ["json", "stream", "gzip", "brotli", "deflate"] }
+reqwest = { version = "0.12", features = ["json", "stream", "gzip", "brotli", "deflate", "blocking"] }
+# Used by the integration bridge to validate the endpoint scheme and host
+# before any transcript is sent. Already in the dependency graph.
+url = "2"
 futures-util = "0.3"
 rustfft = "6.4.0"
 strsim = "0.11.0"
@@ -86,6 +89,13 @@ transcribe-cpp = { version = "0.3.1", default-features = false, features = [
 ] }
 handy-keys = "0.3.4"
 ferrous-opencc = "0.2.3"
+# Local voice-API layer (transcript model, JSON export, custom backend upload).
+# Kept as its own crate so it compiles and tests without the native GUI
+# toolchain; features add the HTTP transport and OS credential storage.
+handy-voice-api = { path = "../crates/handy-voice-api", features = [
+  "http",
+  "keyring",
+] }
 clap = { version = "4", features = ["derive"] }
 specta = "=2.0.0-rc.22"
 specta-typescript = "0.0.9"

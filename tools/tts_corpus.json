@@ -1,0 +1,33 @@
+{
+  "$comment": "Traditional-Chinese (Taiwan) speech corpus with a KNOWN ground truth, for real ASR acceptance testing. Kept as UTF-8 data rather than inline in a PowerShell script, because Windows PowerShell 5.1 reads .ps1 files using the system ANSI codepage and would corrupt CJK literals. The generator reads this file with an explicit UTF-8 decode.",
+  "voice": "Microsoft Hanhan Desktop",
+  "format": { "sample_rate": 16000, "channels": 1, "bits": 16 },
+  "note": "The ground truth is the text handed to the speech synthesiser. Recognition output is compared against it. Synthetic TTS audio is clean speech and is NOT a substitute for testing a human voice through a microphone.",
+  "items": [
+    {
+      "name": "zh_tw_simple",
+      "text": "你好，我想測試語音辨識。",
+      "purpose": "basic Traditional Chinese"
+    },
+    {
+      "name": "zh_tw_daily",
+      "text": "今天天氣很好，適合出門走走。",
+      "purpose": "everyday conversational Mandarin"
+    },
+    {
+      "name": "zh_tw_mixed",
+      "text": "這個系統的延遲很低，我們用開源的模型來做。",
+      "purpose": "Traditional Chinese with a technical register"
+    },
+    {
+      "name": "zh_tw_technical",
+      "text": "請幫我檢查這台電腦的記憶體跟顯示卡。",
+      "purpose": "technical vocabulary (memory, graphics card)"
+    },
+    {
+      "name": "zh_tw_english_word",
+      "text": "我用 Open Source 的模型，這樣比較安全。",
+      "purpose": "intra-sentential Chinese/English code-switching"
+    }
+  ]
+}

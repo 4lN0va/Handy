@@ -1,0 +1,156 @@
+name: voice-api
+
+# This workflow is deliberately separate from upstream's CI.
+#
+# Upstream's jobs build the Tauri application, which needs the native GUI
+# toolchain and takes a long time. This workflow covers the fork's *additive*
+# layer, which is ordinary portable Rust and can therefore be build, tested and
+# linted cheaply on all three operating systems. That is also the only way to
+# get real cross-platform evidence for it while the local build is blocked
+# (see docs/BUILD_BASELINE.md).
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  voice-api:
+    name: voice-api (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      # Everything below is portable Rust with no native build requirements, so
+      # it needs no MSVC, no Xcode project, and no system libraries.
+      - name: Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            crates/handy-voice-api/target
+          key: ${{ runner.os }}-voice-api-${{ hashFiles('crates/handy-voice-api/Cargo.lock') }}
+
+      - name: Formatting
+        working-directory: crates/handy-voice-api
+        run: cargo fmt --check
+
+      - name: Clippy (all targets, all features, warnings denied)
+        working-directory: crates/handy-voice-api
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Tests (default features)
+        working-directory: crates/handy-voice-api
+        run: cargo test
+
+      - name: Tests (all features, incl. reqwest + keyring)
+        working-directory: crates/handy-voice-api
+        run: cargo test --all-features
+
+      # The HTTP integration tests bind a loopback socket and drive the real
+      # reqwest transport over it. They are the only end-to-end verification of
+      # the upload path, so they get an explicit step rather than relying on
+      # `cargo test` to pick them up.
+      - name: Real-socket HTTP integration tests
+        working-directory: crates/handy-voice-api
+        run: cargo test --all-features --test http_integration
+
+      - name: Documentation build
+        working-directory: crates/handy-voice-api
+        run: cargo doc --no-deps --all-features
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  license-tooling:
+    name: licence tooling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The generated documents must match their source data. A stale
+      # MODEL_LICENSES.md or THIRD_PARTY_NOTICES.md is worse than none, because it
+      # states something false with authority.
+      - name: Model-licence tooling tests
+        run: node --test tools/gen_model_licenses.test.mjs
+
+      - name: Licence-audit tooling tests
+        run: node --test tools/audit_rust_licenses.test.mjs
+
+      - name: Catalogue overrides are applied
+        run: node tools/apply_license_overrides.mjs --check
+
+      - name: No restricted model is a recommended default
+        run: node tools/gen_model_licenses.mjs --check
+
+      - name: MODEL_LICENSES.md is up to date
+        run: |
+          node tools/gen_model_licenses.mjs
+          git diff --exit-code MODEL_LICENSES.md
+
+      - name: THIRD_PARTY_NOTICES.md is up to date
+        run: |
+          node tools/gen_third_party_notices.mjs --check
+
+      # A missing UI string is a blank label in the app. English is the fallback
+      # locale, so every key this fork's UI uses must exist there.
+      - name: New UI strings are present
+        run: node tools/add_voice_api_translations.mjs --check
+
+  frontend:
+    name: frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # tsc + vite build. Verified locally to pass (docs/BUILD_BASELINE.md §5);
+      # this job makes it a permanent, enforced check.
+      - name: Build front-end
+        run: bun run build
+
+      - name: Lint front-end
+        run: bun run lint
+
+  schema:
+    name: transcript schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The schema is embedded in the crate via include_str!, so a malformed
+      # schema would be caught by the Rust tests too. This check is cheap and
+      # fails faster with a clearer message.
+      - name: Schema is valid JSON and pins its version
+        run: |
+          node -e "
+            const s = JSON.parse(require('fs').readFileSync('schema/transcript-v1.0.json','utf8'));
+            const v = s.properties.schemaversion.const;
+            if (v !== '1.0') { throw new Error('schema version const is ' + v); }
+            for (const f of ['schemaversion','sessionid','created_at','language','source','segments']) {
+              if (!s.required.includes(f)) throw new Error('schema does not require ' + f);
+            }
+            console.log('schema ok: version', v, '| required', s.required.join(','));
+          "

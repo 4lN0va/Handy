@@ -1,0 +1,63 @@
+[package]
+name = "handy-voice-api"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"
+description = "Transcript model, versioned JSON export, and custom backend API upload for the Handy fork"
+license = "MIT"
+publish = false
+
+# This crate is deliberately dependency-light and free of C/native build
+# requirements so that its logic can be compiled and tested on any host,
+# independent of the platform toolchain needed to link the full Tauri app.
+#
+# Optional features add the pieces that DO need native/platform crates:
+#   http    -> real HTTP transport (reuses reqwest, already a Handy dependency)
+#   keyring -> OS credential-store backed secret storage
+# The default feature set is empty so `cargo test` works anywhere.
+[features]
+default = []
+http = ["dep:reqwest", "dep:url"]
+keyring = ["dep:keyring"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+# Pure-Rust; already present in Handy's dependency tree. Used for the upload
+# idempotency key and for detecting a duplicate upload of identical content.
+sha2 = "0.10"
+
+# NOTE ON TLS: `reqwest` is declared with its default features so this crate
+# uses the SAME TLS backend as the Handy app that embeds it (native-tls:
+# SChannel on Windows, Security.framework on macOS, OpenSSL on Linux). Enabling
+# `rustls-tls` here instead would compile a second TLS stack into the binary,
+# because Cargo unions features across the dependency graph.
+reqwest = { version = "0.12", features = ["blocking", "json"], optional = true }
+url = { version = "2", optional = true }
+
+# `keyring` v3 ships NO default credential-store backend: every platform backend
+# is an opt-in feature. Declaring it without features - which is what this file
+# originally did - compiles cleanly but makes writes silent no-ops that still
+# report success. The API key would appear saved and would not persist, and the
+# failure is invisible until a later run cannot authenticate.
+#
+# All three platform backends are enabled deliberately. keyring declares their
+# underlying crates under `[target.'cfg(target_os = ...)'.dependencies]`, so only
+# the backend for the platform actually being built is compiled; enabling the
+# others costs nothing. `crypto-rust` gives the Linux Secret Service session a
+# pure-Rust cipher, avoiding an OpenSSL build dependency.
+# Regression test: crates/handy-voice-api/tests/os_keyring.rs (run with --ignored).
+keyring = { version = "3", optional = true, features = [
+    "apple-native",
+    "windows-native",
+    "sync-secret-service",
+    "crypto-rust",
+] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[lib]
+name = "handy_voice_api"
+path = "src/lib.rs"

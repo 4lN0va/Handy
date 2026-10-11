@@ -1,0 +1,35 @@
+{
+  "$comment": "Fork-owned overrides applied to the upstream model catalog by tools/apply_license_overrides.mjs. The catalog (src-tauri/src/catalog/catalog.json) is generated upstream by scripts/gen_catalog.py, so a direct hand-edit would be lost on regeneration. Keeping the overrides in this separate, reviewed file makes them survive regeneration and makes the reasoning auditable. Despite the file name, the mechanism is not licence-specific: it sets any catalog field, and the 'recommended_rank' entries below are a product decision rather than a licensing one.",
+  "overrides": [
+    {
+      "id": "handy-computer/nemotron-3.5-asr-streaming-0.6b-gguf",
+      "set": {
+        "recommended": false,
+        "recommended_rank": null
+      },
+      "reason": "The catalog declares license 'other', which means the terms have NOT been confirmed. It was marked recommended (i.e. surfaced to new users as a default pick) upstream. Until the base model's terms are reviewed, it must not be presented as a default. Its rank is also cleared rather than left at 2, which collided with this fork's new rank 2 (Parakeet Unified EN) and made the list order depend on sort stability. Tracked in MODEL_LICENSES.md."
+    },
+    {
+      "id": "handy-computer/whisper-medium-gguf",
+      "set": {
+        "recommended": true,
+        "recommended_rank": 1
+      },
+      "reason": "This fork's default. Whisper Medium is the widest-coverage option (99 languages, including the Traditional Chinese this fork is used for) and is Apache-2.0, so it carries no distribution constraint for a public fork an institution may deploy. Onboarding shows the first two recommended models in rank order as top picks, and auto-selection takes the first downloaded model in the same order, so rank 1 makes it the default in both places."
+    },
+    {
+      "id": "handy-computer/parakeet-unified-en-0.6b-gguf",
+      "set": {
+        "recommended_rank": 2
+      },
+      "reason": "Demoted from rank 1 to 2 so Whisper Medium can hold rank 1 without a tie. Still recommended; it remains the fastest English-only pick."
+    }
+  ],
+  "reviewed_but_unrestricted": [
+    {
+      "id": "handy-computer/canary-1b-gguf",
+      "license": "cc-by-nc-4.0",
+      "note": "Non-commercial. Already not a default upstream. Must never be made one, and must not be bundled or offered as part of a commercial distribution. The CI guard in tools/gen_model_licenses.mjs enforces the 'not a default' half of this."
+    }
+  ]
+}

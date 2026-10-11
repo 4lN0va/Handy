@@ -2,6 +2,7 @@ mod actions;
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 mod apple_intelligence;
 mod audio_feedback;
+mod bridge;
 pub mod audio_toolkit;
 mod autostart;
 mod catalog;
@@ -207,6 +208,40 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     let history_manager =
         Arc::new(HistoryManager::new(app_handle).expect("Failed to initialize history manager"));
 
+    // Voice-API layer: transcript model, JSON export, custom backend upload.
+    // Additive — it does not touch the audio pipeline or the ASR engines.
+    //
+    // The explicit type annotation is load-bearing, not decoration. `init`
+    // already returns `Arc<VoiceApiManager>`; wrapping that in another `Arc::new`
+    // yields `Arc<Arc<VoiceApiManager>>`, which compiles cleanly and then fails
+    // at runtime because Tauri resolves managed state by TypeId. Every command
+    // taking the manager would answer "state not managed for field `manager`".
+    // With the annotation below the double wrap is a compile error.
+    let voice_api_manager: Arc<commands::voice_api::VoiceApiManager> =
+        commands::voice_api::init(app_handle).expect("Failed to initialize voice API manager");
+
+    // Integration bridge to the local verification tool. Disabled until an
+    // endpoint is configured, and it never sends anything by itself.
+    //
+    // The annotations matter: `Bridge::new` and `ContinuousManager::new` already
+    // return `Arc<...>`. Wrapping either in another `Arc::new` would manage the
+    // wrong TypeId and make every command taking it fail at runtime — exactly
+    // the defect Phase 3 found in this file.
+    let bridge: Arc<crate::bridge::Bridge> = crate::bridge::Bridge::new(
+        app_handle
+            .path()
+            .app_data_dir()
+            .map(|dir| dir.join(crate::bridge::CONFIG_FILE))
+            .unwrap_or_else(|_| std::path::PathBuf::from("integration_bridge.json")),
+        app_handle.package_info().version.to_string(),
+    );
+    // Let the transcript layer forward each applied update to the tool, so this
+    // does not become a second, parallel event pipeline.
+    voice_api_manager.set_bridge(Some(Arc::clone(&bridge)));
+
+    let continuous_manager: Arc<managers::continuous::ContinuousManager> =
+        managers::continuous::ContinuousManager::new(app_handle);
+
     // Apply accelerator preferences before any model loads
     managers::transcription::apply_accelerator_settings(app_handle);
 
@@ -215,6 +250,9 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
+    app_handle.manage(voice_api_manager.clone());
+    app_handle.manage(Arc::clone(&bridge));
+    app_handle.manage(Arc::clone(&continuous_manager));
     app_handle.manage(tray::TrayState::new());
 
     // Note: Shortcuts are NOT initialized here.
@@ -767,6 +805,25 @@ pub fn run(cli_args: CliArgs) {
             commands::history::retry_history_entry_transcription,
             commands::history::update_history_limit,
             commands::history::update_recording_retention_period,
+                                                                    commands::voice_api::voice_api_begin_session,
+            commands::voice_api::voice_api_apply_update,
+            commands::voice_api::voice_api_record_error,
+            commands::voice_api::voice_api_get_transcript,
+            commands::voice_api::voice_api_edit_segment,
+            commands::voice_api::voice_api_clear_transcript,
+            commands::voice_api::voice_api_export_to_file,
+            commands::voice_api::voice_api_import_from_file,
+                                            commands::continuous::continuous_start,
+    commands::continuous::continuous_stop,
+    commands::continuous::continuous_state,
+    commands::continuous::continuous_get_settings,
+    commands::continuous::continuous_set_settings,
+    commands::continuous::continuous_enabled,
+    commands::continuous::continuous_set_enabled,
+    commands::continuous::bridge_get_config,
+    commands::continuous::bridge_set_config,
+    commands::continuous::bridge_status,
+    commands::continuous::bridge_heartbeat_now,
             helpers::clamshell::is_laptop,
         ])
         .events(collect_events![

@@ -6,6 +6,55 @@
 
 Handy is a cross-platform desktop application that provides simple, privacy-focused speech transcription. Press a shortcut, speak, and have your words appear in any text field. This happens on your own computer without sending any information to the cloud.
 
+> ## 🔀 This is a fork
+>
+> This repository is a fork of [cjpais/Handy](https://github.com/cjpais/Handy). It
+> tracks upstream and its differences are deliberately **additive**, so upstream
+> updates stay easy to merge. Everything below this box is upstream's own
+> documentation and still applies.
+>
+> **What this fork adds** (see [CHANGELOG.md](CHANGELOG.md) for detail):
+>
+> - A **versioned transcript model** with stable segment ids, so tentative and
+>   confirmed text can never both be appended. Handy's live recognition events are
+>   fed into it by a bridge that edits **no upstream file**.
+> - **JSON export / import** against a published schema,
+>   [`schema/transcript-v1.0.json`](schema/transcript-v1.0.json).
+> - A **custom backend upload client**: configurable URL, method, headers, auth
+>   and body shape, with bounded retry and idempotency.
+> - **API keys in the OS credential store** rather than a settings file.
+> - Two new settings screens: **Transcript** (live text, edit, copy, export,
+>   upload) and **Voice API** (endpoint, credentials, connection test).
+> - Model and dependency **licence tooling**, generating
+>   [MODEL_LICENSES.md](MODEL_LICENSES.md) and
+>   [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+>
+> **Read this before trusting anything here:**
+>
+> - ✅ **The application builds and runs on Windows x86_64 with MSVC**, with
+>   upstream's own test suite passing (294 passed, 0 failed). Build it with
+>   [`tools/msvc_env.ps1`](tools/msvc_env.ps1); see
+>   [`docs/BUILD_BASELINE.md`](docs/BUILD_BASELINE.md) for the two
+>   locale-dependent environment fixes it needs on a non-English Windows.
+> - ✅ The `handy-voice-api` crate builds anywhere, passing **190 tests**
+>   including real-socket HTTP integration tests, with clean `fmt` and
+>   `clippy -D warnings`.
+> - ❌ **No microphone, speech-accuracy or GUI click-through test has been
+>   performed.** Nothing here is evidence that recognition works on your machine.
+> - ⚠️ Uploads are verified against a **local test backend over loopback**, not
+>   against any production third-party API.
+> - Security posture and its limits: [SECURITY.md](SECURITY.md).
+> - Full breakdown: [`docs/PHASE2_TEST_REPORT.md`](docs/PHASE2_TEST_REPORT.md).
+>
+> **This is a personal fork**, not a contribution. Why it is a fork rather than
+> a clean repository, how to lay out the remotes, which CI workflows work on a
+> fork, and how to build all three platforms:
+> [`docs/FORK_MAINTENANCE.md`](docs/FORK_MAINTENANCE.md).
+>> **Developing on this fork:** start with
+> [`docs/BUILD_BASELINE.md`](docs/BUILD_BASELINE.md). Use `tools/msvc_env.ps1` to
+> build the application, and `tools/dev_env.ps1` to build and test the portable
+> `handy-voice-api` crate without the GUI toolchain.
+
 ## Why Handy?
 
 Handy was created to fill the gap for a truly open source, extensible speech-to-text tool. As stated on [handy.computer](https://handy.computer):
