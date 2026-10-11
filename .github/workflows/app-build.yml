@@ -1,0 +1,79 @@
+name: app build (manual)
+
+# ⚠️ THIS WORKFLOW HAS NOT BEEN RUN.
+#
+# It was written from a *verified local* Windows build, but the authoring
+# environment had no way to execute a GitHub Actions run, so nothing here has
+# been validated against `windows-latest`. It is therefore `workflow_dispatch`
+# only: it cannot break pull requests, and it must be exercised manually and
+# corrected before it is made automatic.
+#
+# When you do run it, expect to adjust at least:
+#   * the Vulkan SDK install (version, and whether `windows-latest` already has it)
+#   * the ONNX Runtime setup — locally `ort-sys` downloaded its own binaries and
+#     `ORT_LIB_LOCATION` was NOT set; upstream's build.yml links a baseline ORT
+#     dynamically instead, so the two approaches differ
+#   * the frontend step, if `bun install` needs `--frozen-lockfile`
+#
+# The two environment fixes below are NOT optional and are the reason this file
+# is worth having: without VSLANG=1033 the Ninja build dies with an opaque
+# "subcommand failed", and without /utf-8 the native code fails to compile on any
+# non-UTF-8 system locale. See docs/BUILD_BASELINE.md §3.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows-msvc:
+    name: Windows x86_64 (MSVC)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vulkan SDK
+        # Required by ggml's Vulkan backend (glslc). Upstream's build.yml installs
+        # this too; the LunarG installer requests elevation.
+        run: winget install --id KhronosGroup.VulkanSDK --accept-package-agreements --accept-source-agreements --disable-interactivity
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install frontend dependencies and build
+        run: |
+          bun install
+          bun run build
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-app-${{ hashFiles('src-tauri/Cargo.lock') }}
+
+      - name: Build the application
+        shell: pwsh
+        env:
+          # See the header comment: both of these are required.
+          VSLANG: '1033'
+          CMAKE_ARGS: '-DCMAKE_C_FLAGS=/utf-8 -DCMAKE_CXX_FLAGS=/utf-8'
+        run: |
+          # `-no-bundle` skips the installer/signing step, which needs release-only
+          # secrets. This mirrors upstream BUILD.md's local-development advice.
+          cargo build --manifest-path src-tauri/Cargo.toml
+
+      - name: Run the application test suite
+        shell: pwsh
+        env:
+          VSLANG: '1033'
+          CMAKE_ARGS: '-DCMAKE_C_FLAGS=/utf-8 -DCMAKE_CXX_FLAGS=/utf-8'
+        run: cargo test --manifest-path src-tauri/Cargo.toml --lib
+
+      - name: Confirm the binary exists
+        shell: pwsh
+        run: |
+          $exe = 'src-tauri\target\debug\handy.exe'
+          if (-not (Test-Path $exe)) { throw "expected $exe" }
+          Get-Item $exe | Select-Object FullName, Length

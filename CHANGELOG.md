@@ -10,7 +10,72 @@ currently publish versioned releases of its own.
 
 ## [Unreleased]
 
-### Added
+### Phase 2 — integration
+
+#### Added
+
+- **Recognition events are now wired into the transcript**, with **no upstream
+  file modified**: the bridge subscribes from Rust to the events Handy already
+  emits (`stream-text-event`, `stream-phase-event`, `history-update-payload`,
+  `transcription-error`) inside `commands/voice_api.rs`.
+  - **`StreamEventAdapter`** (`crates/handy-voice-api/src/stream_adapter.rs`) — a
+    pure state machine converting `{committed, tentative}` into segment-addressed
+    transcript updates. The upstream payload carries **no segment id and no
+    revision**, and each event contains the whole utterance, so identity is
+    derived from the *shape* of the committed prefix (progress / stale /
+    discontinuity) rather than from the text. Non-streaming models are handled by
+    the same path: a final text with no active segment creates and finalizes one.
+  - **Two new settings screens**: **Transcript** (live text with tentative text
+    distinguished, inline edit, copy, clear, JSON export, upload with a
+    disclosure panel) and **Voice API** (endpoint, method, headers, body shape,
+    credentials, timeout/retry, connection test).
+  - Commands: `voice_api_is_busy`, `voice_api_last_operation`,
+    `voice_api_upload_preview`.
+  - `tools/msvc_env.ps1` — imports the MSVC developer environment, with the two
+    locale fixes below.
+  - `tools/add_voice_api_translations.mjs` — injects the 79 new English UI
+    strings, with `--check` for CI.
+  - `docs/PHASE2_INTEGRATION_PLAN.md`, `docs/PHASE2_TEST_REPORT.md`.
+  - 18 adapter tests, 11 real-socket HTTP integration tests, and 12 bridge tests in
+    the application crate.
+
+#### Fixed
+
+- **`VSLANG=1033` is required in this environment.** Otherwise CMake+Ninja cannot
+  parse the localised `/showIncludes` prefix from `cl.exe` and the native build
+  dies with a bare `ninja: build stopped: subcommand failed`.
+- **MSVC must be told the sources are UTF-8** (`-DCMAKE_C_FLAGS=/utf-8`).
+  `transcribe-cpp-sys`'s `canary/model.cpp` is UTF-8 without a BOM and contains a
+  literal `▁`; on a GBK/936 system the comment swallows real code and the compiler
+  reports `'sp_space_id': undeclared identifier` in valid code. Invisible on
+  upstream's English-locale CI.
+- A genuine defect in a new test: two managers were given separate in-memory
+  credential stores, so a reloaded manager could not see a stored key. Fixed by
+  sharing the store, matching the process-wide OS store the app uses.
+
+#### Changed
+
+- `voice_api_upload` and `voice_api_test_connection` take a single-flight permit
+  (`compare_exchange`), so a double click cannot fan out into concurrent
+  requests. The bridge's state changes were split from event emission so the logic
+  is testable without a running Tauri application.
+
+#### Verified by building and running
+
+- The application now **builds** (`cargo build --manifest-path src-tauri/Cargo.toml`)
+  and **launches**, initialising the Vulkan backend on an RTX 5060 Ti.
+- `cargo test --manifest-path src-tauri/Cargo.toml --lib`: **294 passed, 0 failed,
+  16 ignored** — upstream's whole library suite, which could not be compiled
+  before this phase.
+- `handy-voice-api`: **190 tests** pass, clean `fmt` and `clippy -D warnings`.
+- Front end type-checks against the regenerated bindings; `bun run build` passes.
+
+> **Still not verified:** microphone capture, speech accuracy, GUI click-through,
+> and any production third-party API. See `docs/PHASE2_TEST_REPORT.md`.
+
+### Phase 1 — voice-API layer
+
+#### Added
 
 - **`handy-voice-api` crate** (`crates/handy-voice-api/`) — the transcript,
   JSON-export and custom-upload layer, kept as a separate crate so it compiles
@@ -84,20 +149,26 @@ currently publish versioned releases of its own.
 
 ### Known gaps
 
-- **The application has not been built or run.** The full build requires MSVC
-  Build Tools, which need administrator rights that this environment does not
-  have. Nothing in this repository should be read as evidence that the GUI
-  launches, that the microphone works, or that any model transcribes correctly.
-  See `docs/BUILD_BASELINE.md` for the evidence and the unblocking steps.
-- `src-tauri/src/commands/voice_api.rs` has been verified to **parse and format**
-  (via `rustfmt`) but **not to type-check**, because that requires compiling
-  `src-tauri`'s dependency graph.
-- Front-end UI for the new features is not implemented yet; the command surface
-  exists but nothing in the React app calls it.
+Superseded by Phase 2 above for the build and integration status; the remaining
+gaps are:
+
+- **No microphone, speech-accuracy or GUI click-through test has been performed.**
+  Nothing in this repository should be read as evidence that recognition works on
+  a given machine, or that any model reaches a particular accuracy or latency.
+- Uploads are verified against a **local test backend over loopback**, not against
+  any production third-party API.
+- **Cancellation is not wired to a UI control.** An upload is bounded by the
+  configured timeout and by refusing concurrent requests, but the retry loop has
+  no cancel token.
+- **Command payloads cross the boundary as JSON strings** rather than generated
+  types, because `tauri-specta` needs `specta::Type` on every type and the crate
+  deliberately does not depend on a UI framework. The frontend declares matching
+  interfaces by hand.
+- **Only English has the new UI strings.** i18next falls back to `en` for the
+  other 25 locales, so the screens are usable everywhere, but they are untranslated.
 - Auto-upload is not implemented. Uploads are only ever performed by an explicit
   user action.
-- `/api` uploads are not wired to Handy's own transcription events yet; the
-  frontend must forward results into `voice_api_apply_update`.
+- Only Windows x86_64 has been built and run.
 
 ### Not yet addressed
 

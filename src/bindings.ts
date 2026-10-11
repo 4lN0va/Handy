@@ -916,10 +916,238 @@ async updateRecordingRetentionPeriod(period: string) : Promise<Result<null, stri
 }
 },
 /**
- * Checks if the Mac is a laptop by detecting battery presence
+ * Return the current endpoint configuration as JSON. Contains no credential.
+ */
+async voiceApiGetConfig() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_get_config") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Replace the endpoint configuration, validating it before saving.
+ */
+async voiceApiSetConfig(configJson: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_set_config", { configJson }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Default endpoint configuration, for the settings UI's "reset" action.
+ */
+async voiceApiDefaultConfig() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_default_config") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Whether an API key is stored. Never returns the key itself.
+ */
+async voiceApiHasApiKey() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_has_api_key") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Store an API key in the operating system credential store.
  * 
- * This uses pmset to check for battery information.
- * Returns true if a battery is detected (laptop), false otherwise (desktop)
+ * The key is never written to the settings file, the transcript, or a log.
+ */
+async voiceApiSetApiKey(apiKey: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_set_api_key", { apiKey }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Delete the stored API key.
+ */
+async voiceApiClearApiKey() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_clear_api_key") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Where credentials are actually stored, so the UI can be truthful about it.
+ */
+async voiceApiSecretStorage() : Promise<string> {
+    return await TAURI_INVOKE("voice_api_secret_storage");
+},
+/**
+ * Start a new transcription session and return its id.
+ */
+async voiceApiBeginSession(language: string, source: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_begin_session", { language, source }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Apply one recognition result to the active session.
+ * 
+ * Returns the [`ApplyOutcome`] as JSON so the frontend can distinguish a real
+ * update from a dropped duplicate.
+ */
+async voiceApiApplyUpdate(updateJson: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_apply_update", { updateJson }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Record a non-fatal failure against the active session.
+ */
+async voiceApiRecordError(message: string, segmentId: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_record_error", { message, segmentId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Return the active session's transcript as JSON.
+ */
+async voiceApiGetTranscript() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_get_transcript") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Replace a segment's text with a user edit.
+ */
+async voiceApiEditSegment(segmentId: string, text: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_edit_segment", { segmentId, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Discard the current transcript's contents, keeping the session.
+ */
+async voiceApiClearTranscript() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_clear_transcript") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Export the active transcript to `path`, returning the JSON that was written.
+ * 
+ * Passing `finals_only` exports only confirmed text.
+ */
+async voiceApiExportToFile(path: string, finalsOnly: boolean) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_export_to_file", { path, finalsOnly }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Load a transcript document from disk into the active session's place.
+ * 
+ * Returns the imported document as JSON and makes it the active session, so
+ * the user can keep editing or upload what they just opened.
+ */
+async voiceApiImportFromFile(path: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_import_from_file", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Test the configured endpoint without uploading anything.
+ * 
+ * The connection test is deliberately explicit: nothing is ever sent
+ * automatically, and this is the only way to probe the endpoint from the UI.
+ */
+async voiceApiTestConnection() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_test_connection") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Upload the active transcript to the configured endpoint.
+ * 
+ * Only ever called from an explicit user action; there is no implicit upload
+ * path, and a second concurrent upload is refused rather than queued.
+ */
+async voiceApiUpload() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_upload") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Whether a network operation is currently running.
+ */
+async voiceApiIsBusy() : Promise<boolean> {
+    return await TAURI_INVOKE("voice_api_is_busy");
+},
+/**
+ * The most recent network result as JSON, or `null` if none has run.
+ */
+async voiceApiLastOperation() : Promise<Result<string | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_last_operation") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * What the GUI is about to upload, without sending anything.
+ * 
+ * Lets the upload screen state plainly which data will leave the machine —
+ * session id, language, segment count and a short preview — so the user does
+ * not have to guess.
+ */
+async voiceApiUploadPreview() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("voice_api_upload_preview") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stub implementation for non-macOS platforms
+ * Always returns false since laptop detection is macOS-specific
  */
 async isLaptop() : Promise<Result<boolean, string>> {
     try {

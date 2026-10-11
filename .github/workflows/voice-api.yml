@@ -56,6 +56,14 @@ jobs:
         working-directory: crates/handy-voice-api
         run: cargo test --all-features
 
+      # The HTTP integration tests bind a loopback socket and drive the real
+      # reqwest transport over it. They are the only end-to-end verification of
+      # the upload path, so they get an explicit step rather than relying on
+      # `cargo test` to pick them up.
+      - name: Real-socket HTTP integration tests
+        working-directory: crates/handy-voice-api
+        run: cargo test --all-features --test http_integration
+
       - name: Documentation build
         working-directory: crates/handy-voice-api
         run: cargo doc --no-deps --all-features
@@ -95,6 +103,11 @@ jobs:
       - name: THIRD_PARTY_NOTICES.md is up to date
         run: |
           node tools/gen_third_party_notices.mjs --check
+
+      # A missing UI string is a blank label in the app. English is the fallback
+      # locale, so every key this fork's UI uses must exist there.
+      - name: New UI strings are present
+        run: node tools/add_voice_api_translations.mjs --check
 
   frontend:
     name: frontend build

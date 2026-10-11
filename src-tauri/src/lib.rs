@@ -791,6 +791,9 @@ pub fn run(cli_args: CliArgs) {
             commands::voice_api::voice_api_import_from_file,
             commands::voice_api::voice_api_test_connection,
             commands::voice_api::voice_api_upload,
+            commands::voice_api::voice_api_is_busy,
+            commands::voice_api::voice_api_last_operation,
+            commands::voice_api::voice_api_upload_preview,
             helpers::clamshell::is_laptop,
         ])
         .events(collect_events![

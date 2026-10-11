@@ -2,10 +2,10 @@
 
 Record of what was actually executed, on what machine, with what result.
 
-**Status summary: the upstream application cannot be linked on this machine.** The
-reason is environmental (no MSVC toolchain, no administrator rights), not a code
-defect. Everything that *can* be verified without that toolchain has been, and
-the evidence is below.
+**Status: the application builds and runs.** This document also keeps the
+Phase 1 history, because the reason the build was blocked — and the two
+locale-dependent defects that had to be fixed to unblock it — is the most useful
+part for anyone reproducing this.
 
 ---
 
@@ -15,319 +15,229 @@ the evidence is below.
 |---|---|
 | OS | Windows 10.0.19045 (Windows 10 22H2) |
 | CPU architecture | AMD64 (x86_64), 16 logical cores |
-| Administrator | **No** — `IsInRole(Administrator)` is `false` |
-| Free disk at start | ~21 GB on `C:` |
+| Administrator | **No** |
+| GPU | NVIDIA GeForce RTX 5060 Ti, 1 Vulkan device |
 | Shell | PowerShell (`pwsh`) |
 
-### Toolchain present before any setup
+### Toolchain
 
-```
-git      2.54.0.windows.1
-rustc    1.98.0 (default toolchain stable-x86_64-pc-windows-msvc)
-cargo    1.98.0
-rustup   1.29.0
-node     v24.17.0
-pnpm / npm present
-python   3.14.6
-winget   present
-tar      (Windows bsdtar)
-ffmpeg   (Gyan winget build)
+| Component | Version | Notes |
+|---|---|---|
+| Rust (default) | 1.98.0 `stable-x86_64-pc-windows-msvc` | used for the application build |
+| Rust (secondary) | 1.99.0 `stable-x86_64-pc-windows-gnu` | per-user, used to test the portable crate |
+| Visual Studio Build Tools | 2022 17.14.37710, `isComplete: true` | `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` present |
+| MSVC toolset | 14.44.35207 | `cl.exe` / `link.exe` |
+| Windows SDK | 10.0.26100.0 | `Include`, `Lib`, `bin` |
+| CMake | 4.4.4 | for `ggml` / `transcribe-cpp` |
+| Ninja | 1.13.2 | CMake generator |
+| Vulkan SDK | 1.4.363.0 | provides `glslc` for `ggml-vulkan` |
+| Bun | 1.4.3 | frontend |
+| ONNX Runtime | downloaded by `ort-sys` | MSVC target only (see §5) |
 
-cmake            NOT FOUND
-ninja            NOT FOUND
-cl               NOT FOUND
-link             NOT FOUND      <-- see blocker, section 3
-vswhere          NOT FOUND
-bun              NOT FOUND
-Windows Kits\10  NOT FOUND      (no Windows SDK)
-Visual Studio    NOT FOUND      (no VS / Build Tools installation)
-```
+Everything is per-user except the VS Build Tools and the Vulkan SDK, which
+required elevation.
 
 ## 2. Upstream baseline
 
 ```
-repository   https://github.com/cjpais/Handy
-cloned into  handy-fork/             (full history, not a shallow clone)
-HEAD         48a3d8e9ee456c1c6a3b7223779271c457890b4d
-HEAD date    2026-10-10
-latest tag   v0.9.8
-commits      883
-working tree C:\Users\Nova\Project Brief\handy-fork
+repository    https://github.com/cjpais/Handy
+checked out   handy-fork/            (full history, not a shallow clone)
+upstream HEAD 48a3d8e9ee456c1c6a3b7223779271c457890b4d   (2026-10-10)
+latest tag    v0.9.8
+baseline tag  upstream-baseline-v0.9.8
+dev branch    feature/voice-api-mvp
 ```
 
-An immutable baseline tag was created before any edits, so the fork's divergence
-is always measurable:
+Commit identity for this fork is set **locally** in `handy-fork/.git/config`; the
+user's global git identity is untouched.
 
-```bash
-git tag upstream-baseline-v0.9.8 v0.9.8
-git checkout -b feature/voice-api-mvp
-```
+## 3. Build-environment problems, and how they were fixed
 
-Commit identity used for this fork is set **locally** in `handy-fork/.git/config`
-only (the user's global git identity was deliberately left untouched):
+Three of these are **environment defects, not code defects**, and all three are
+recorded in `tools/msvc_env.ps1` because they recur on any non-English Windows.
+This is the part of the document worth reading.
 
-```
-user.name  = Handy Voice-API Fork
-user.email = dev@localhost
-```
+### 3.1 Ninja cannot parse a localised `cl.exe` (`VSLANG`)
 
-## 3. The blocker: no MSVC toolchain, and no rights to install one
-
-Upstream `BUILD.md` states the Windows prerequisites:
-
-> Microsoft C++ Build Tools: Visual Studio 2019/2022 with C++ development tools,
-> or Visual Studio Build Tools 2019/2022
-
-Both require an elevated (administrator) install. This account is not an
-administrator, and approval prompts are disabled in this session, so the
-installation cannot be performed.
-
-This is not a vague "might not work" — it was executed and failed:
+Symptom:
 
 ```
-$ cargo build
-   Compiling linkprobe v0.1.0
-error: linker `link.exe` not found
-  |
-  = note: the msvc targets depend on the msvc linker but `link.exe` was not found
-  = note: please ensure that Visual Studio 2017 or later, or Build Tools for
-          Visual Studio were installed with the Visual C++ option
+ninja: build stopped: subcommand failed.
 ```
 
-```
-$ cargo install cargo-xwin --target x86_64-pc-windows-gnu
-error: linker `link.exe` not found
-error: failed to compile `cargo-xwin v0.23.1`
-```
+accompanied by thousands of `注意: 包含檔案:` lines. CMake+Ninja drives `cl.exe`
+with `/showIncludes` and parses the resulting prefix to discover header
+dependencies. A Chinese-locale toolchain localises that prefix; Ninja stops
+recognising it, and the failure is reported as a bare build stop that looks like a
+compiler error but is a dependency-scanning failure.
 
-The second failure is the important one: **even cross-compiling needs a working
-host linker**, because `build.rs` scripts and proc-macros are always compiled for
-the *host*. On this machine the host ABI is `windows-msvc`.
+**Fix: `VSLANG=1033`.**
 
-**Consequence:** the Tauri application (`src-tauri`) cannot be compiled or run
-here. No GUI launch, no microphone test, and no model inference could be
-performed. Those acceptance criteria remain **unverified**, not "passing".
+### 3.2 A UTF-8 source file decoded as GBK (`/utf-8`)
 
-### 3.1 The GNU target was tried too, and fails for an independent reason
-
-Rather than stop at "no MSVC", the portable MinGW toolchain from section 4 was
-used to attempt the full app for `x86_64-pc-windows-gnu`. This got **much further
-than expected** — Cargo resolved the whole graph, updated the lockfile, and began
-building whisper.cpp through CMake — and then failed for a reason that cannot be
-worked around:
+With the above fixed, the real first error appeared:
 
 ```
-error: ort-sys@2.0.0-rc.12: ort does not provide prebuilt binaries for the target
-       `x86_64-pc-windows-gnu` with feature set (no features).
-error: ort-sys@2.0.0-rc.12:  | You may have to compile ONNX Runtime from source
-       and link `ort` to your custom build
+transcribe-cpp-sys-0.3.1\src\arch\canary\model.cpp(670): error C2065: 'sp_space_id': undeclared identifier
+transcribe-cpp-sys-0.3.1\src\arch\canary\model.cpp(673): error C3927: '->': trailing return type ...
 ```
 
-Two independent facts make this terminal:
+The code at those lines is valid. The cause is line 667: the file is UTF-8
+**without a BOM** and contains a literal `▁` (U+2581). Without `/utf-8`, MSVC
+decodes source using the system ANSI codepage; under GBK/936 the UTF-8 bytes of
+that character pair with the following bytes, the comment swallows real code, and
+the compiler emits a cascade of nonsense.
 
-1. The Parakeet/Moonshine/SenseVoice/Canary/Cohere engines in this application run
-   through ONNX Runtime, so `ort-sys` is not an optional dependency.
-2. ONNX Runtime publishes **only MSVC-ABI Windows binaries**. Checked against the
-   project's own release assets (`v1.31.0`): `onnxruntime-win-x64`,
-   `onnxruntime-win-arm64`, `onnxruntime-win-arm64x`, and two CUDA variants —
-   **no `gnu` or `mingw` asset exists**.
+Upstream CI builds on English-locale runners where the ANSI codepage is CP1252:
+the same three bytes decode as three single-byte characters and consume nothing,
+so the defect is invisible there.
 
-Building ONNX Runtime from source for the GNU ABI, or swapping in a different
-inference backend, would mean changing which engines the product ships. That is
-out of scope for a build-environment fix, so the attempt was stopped there.
+**Fix: `-DCMAKE_C_FLAGS=/utf-8 -DCMAKE_CXX_FLAGS=/utf-8` via `CMAKE_ARGS`.**
 
-Two intermediate failures were fixed along the way, and both fixes are recorded
-in `tools/dev_env.ps1` because they would recur on any machine taking this route:
+### 3.3 Missing Vulkan SDK
 
-* **CMake must use Ninja, not "MSYS Makefiles".** w64devkit's `make.exe` runs
-  through its own `sh.exe`, which does not translate the Windows paths CMake
-  writes into the Makefiles, so the compiler probe fails with
-  `/C/Users/.../cmake.exe: not found`. Setting `CMAKE_GENERATOR=Ninja` fixes it.
-* **The transcribe-cpp CMake cache must be cleared when switching generators.**
-  It lives at `%LOCALAPPDATA%\tcs\<hash>\build`; a stale `CMakeCache.txt` makes
-  CMake refuse with *"generator: Ninja does not match the generator used
-  previously"*.
+```
+CMake Error: Could NOT find Vulkan (missing: Vulkan_LIBRARY Vulkan_INCLUDE_DIR glslc)
+```
 
-So the two available routes are both closed, for different and independently
-verified reasons:
+**Fix: `winget install KhronosGroup.VulkanSDK`** (1.4.363.0). The installer
+requests elevation; it completed successfully here.
 
-| Route | Outcome | Root cause |
-|---|---|---|
-| MSVC (`windows-msvc`) | ❌ blocked | `link.exe` absent; installing Build Tools needs administrator rights |
-| MinGW (`windows-gnu`) | ❌ blocked | ONNX Runtime ships no GNU-ABI binaries |
+### 3.4 Stale CMake cache when changing generator
 
-## 4. What was done instead: a per-user, portable toolchain
+After switching to Ninja, CMake refused with *"generator: Ninja does not match the
+generator used previously"*. The transient cache lives at
+`%LOCALAPPDATA%\tcs\<hash>\build` and had to be cleared once.
 
-Everything below is installed **per-user with no elevation**, under
-`C:\Users\Nova\toolchain`. Reproduce with:
+## 4. Proof the toolchain links
+
+Before touching the application, a throwaway crate with `serde` + `serde_json`
+(so build scripts and proc-macros are exercised):
+
+```
+$ cargo run --quiet
+{"text":"你好，我想測試語音辨識。"}
+run exit=0
+```
+
+## 5. History: the Phase 1 blocker
+
+Kept because it explains the two fixes above, and because the second half is still
+true.
+
+* **MSVC route (was blocked, now resolved):** `link.exe` was absent, and
+  installing Build Tools requires administrator rights.
+  `cargo build` failed with `error: linker 'link.exe' not found`. Resolved by the
+  user installing VS Build Tools 2022.
+* **GNU route (blocked, permanently):**
+
+  ```
+  error: ort-sys: ort does not provide prebuilt binaries for the target
+         `x86_64-pc-windows-gnu` with feature set (no features).
+  ```
+
+  Verified against ONNX Runtime's own release assets (`v1.31.0`):
+  `onnxruntime-win-x64`, `-win-arm64`, `-win-arm64x`, and two CUDA variants — no
+  `gnu`/`mingw` asset exists. The ONNX-backed engines are not optional, so the GNU
+  target cannot build this application. This is an upstream packaging decision,
+  not a local misconfiguration, and it will not change.
+
+## 6. Portable per-user toolchain
+
+Still used, for the reason in §8: the `handy-voice-api` crate is ordinary portable
+Rust and can be built and tested **without** the GUI toolchain, which makes it
+verifiable on machines that cannot build the application at all.
 
 ```bash
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/setup_portable_toolchain.ps1
-```
-
-| Component | Version | Purpose |
-|---|---|---|
-| w64devkit (MinGW-w64 GCC) | 2.10.0 / GCC 16.2.0 | GNU linker for the `x86_64-pc-windows-gnu` target |
-| CMake | 4.4.4 | native dependency builds (whisper.cpp / ggml) |
-| Ninja | 1.13.2 | CMake generator |
-| Bun | 1.4.3 | frontend install and build |
-| LLVM | 23.1.3 | `clang-cl` / `lld-link`, for a future MSVC-ABI path |
-
-Plus a second Rust toolchain, **without changing the default**:
-
-```bash
 rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal
 rustup component add --toolchain stable-x86_64-pc-windows-gnu rustfmt clippy
 ```
 
-`rustup show active-toolchain` still reports
-`stable-x86_64-pc-windows-msvc (default)` — the user's default is unchanged.
+One non-obvious fix is required: w64devkit's GCC 16 ships only `libgcc.a` with the
+exception-handling routines folded in, and no separate `libgcc_eh.a`, which Rust's
+`windows-gnu` target always requests. Creating an empty archive
+(`ar rcs libgcc_eh.a`) resolves it.
 
-### 4.1 One non-obvious fix
+## 7. Building and running the application
 
-w64devkit's GCC 16 ships only `libgcc.a`; the exception-handling routines are
-folded into it, and there is no separate `libgcc_eh.a`. Rust's
-`x86_64-pc-windows-gnu` target always passes `-lgcc_eh`, so linking fails:
-
-```
-ld.exe: cannot find -lgcc_eh: No such file or directory
-```
-
-Verified that the EH symbols really are present in `libgcc.a`
-(`_Unwind_Resume`, `_Unwind_Resume_or_Rethrow`) and created an empty archive
-next to it:
-
-```bash
-ar rcs libgcc_eh.a          # creates an empty archive
-```
-
-### 4.2 Proof the toolchain works
-
-`tools/dev_env.ps1` sets up the environment; a trivial crate then builds, links
-and runs:
-
-```
-$ cargo build
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.53s
-$ ./linkprobe.exe
-Hello, world!
+```powershell
+. .\tools\msvc_env.ps1                       # imports vcvars64 + VSLANG + /utf-8
+$env:PATH = 'C:\Users\Nova\toolchain\ninja;C:\Users\Nova\toolchain\bun\bun-windows-x64;' + $env:PATH
+$env:CMAKE_GENERATOR = 'Ninja'
+$env:CMAKE_MAKE_PROGRAM = 'C:\Users\Nova\toolchain\ninja\ninja.exe'
+$env:CARGO_TARGET_DIR = 'C:\Users\Nova\t'
+cd handy-fork
+bun install
+bun run build                                # produces dist/, embedded by tauri-build
+cargo build --manifest-path src-tauri/Cargo.toml
+C:\Users\Nova\t\debug\handy.exe --debug
 ```
 
-## 5. What was verified, and how
+A short `CARGO_TARGET_DIR` is recommended by upstream `BUILD.md` to stay clear of
+Windows' 260-character path limit during the nested CMake builds.
 
-A full table of every claim made about this work.
+`src-tauri` is standalone — there is no workspace — and the fork's crate is pulled
+in as a path dependency, so `--manifest-path src-tauri/Cargo.toml` is the correct
+invocation.
+
+Run the app **with the working directory set to `src-tauri`** if you want
+`tauri-specta` to regenerate `src/bindings.ts` into the repository: the export path
+is `../src/bindings.ts`, resolved relative to the process working directory.
+
+## 8. What is verified, and how
 
 | # | Claim | Command | Result |
 |---|---|---|---|
-| 1 | Portable toolchain builds and links a GNU-target binary | `cargo build` (probe crate) then run | ✅ `Hello, world!` |
-| 2 | `handy-voice-api` compiles, default features | `cargo +stable-x86_64-pc-windows-gnu build` | ✅ |
-| 3 | `handy-voice-api` compiles, all features (reqwest + keyring) | `cargo +stable-x86_64-pc-windows-gnu build --all-features` | ✅ |
-| 4 | Unit + integration tests pass | `cargo +stable-x86_64-pc-windows-gnu test --all-features` | ✅ **160 passed, 0 failed** |
-| 5 | Documentation example compiles and runs | same command (doctests) | ✅ **1 passed** |
-| 6 | Formatting is clean | `cargo fmt --check` | ✅ exit 0 |
-| 7 | Lints are clean at deny level | `cargo clippy --all-targets --all-features -- -D warnings` | ✅ exit 0 |
-| 8 | Frontend type-checks and builds | `bun install && bun run build` (`tsc && vite build`) | ✅ 2123 modules, `dist/` produced |
-| 9 | New Tauri command module parses | `rustfmt --edition 2021 --check src-tauri/src/commands/voice_api.rs` | ✅ exit 0 |
-| 10 | Edited `lib.rs` / `commands/mod.rs` still parse | `rustfmt --edition 2021 --check <file>` | ✅ exit 0 |
-| 11 | **Full application builds** | `cargo check --manifest-path src-tauri/Cargo.toml` (MSVC and GNU) | ❌ **blocked — see sections 3 and 3.1** |
-| 12 | **`src-tauri` type-checks** | as above | ❌ **not verified** |
-| 13 | **GUI launches** | — | ❌ **not verified** |
-| 14 | **Microphone capture works** | — | ❌ **not verified** |
-| 15 | **A real model transcribes Traditional Chinese** | — | ❌ **not verified** |
-| 16 | **Upstream's own test suite passes** | `cargo test` in `src-tauri` | ❌ **not verified** |
+| 1 | MSVC toolchain resolves | `where cl` / `where link` inside `vcvars64` | ✅ |
+| 2 | MSVC links real code | `cargo run` on a `serde` probe | ✅ |
+| 3 | **Full application builds** | `cargo build --manifest-path src-tauri/Cargo.toml` | ✅ `Finished dev profile in 42.26s` |
+| 4 | **Application launches** | `handy.exe --debug` | ✅ running, window titled "Handy" |
+| 5 | Vulkan backend initialises | startup log | ✅ RTX 5060 Ti detected, `Vulkan0, CPU` |
+| 6 | Model catalog loads | startup log | ✅ `Seeded 69 catalog model(s)` |
+| 7 | History DB migrates | startup log | ✅ `Database migrated from version 0 to 4` |
+| 8 | `handy-voice-api` tests | `cargo test --all-features` | ✅ 178 unit + 11 integration + 1 doctest |
+| 9 | Application crate tests | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | ✅ 294 passed, 0 failed, 16 ignored |
+| 10 | Formatting | `cargo fmt --check` | ✅ |
+| 11 | Lints | `cargo clippy --all-targets --all-features -- -D warnings` | ✅ |
+| 12 | Front end | `bun run build` | ✅ 2129 modules |
+| 13 | **Microphone capture** | — | ❌ **not tested** |
+| 14 | **Real ASR accuracy / latency** | — | ❌ **not tested** |
+| 15 | **GUI click-through** | — | ❌ **not tested** |
+| 16 | Installer bundling (`tauri build`) | — | ❌ **not attempted** (needs the signing setup) |
+| 17 | Any platform other than Windows x86_64 | — | ❌ **not tested** |
 
-Rows 11–16 are the honest gaps. **Nothing in this repository claims they work.**
+Rows 13–17 are the honest gaps. **Nothing in this repository claims they work.**
 
-### 5.1 A note on row 8
+See `PHASE2_TEST_REPORT.md` for the full breakdown, including which results come
+from a controlled loopback test backend rather than a production API.
 
-`bun install` reported one failure:
+## 9. Cross-platform status
 
-```
-error: ENOENT extracting tarball from @typescript-eslint/eslint-plugin
-```
-
-That package is a **lint-time** dependency only. The production build
-(`tsc && vite build`) completed successfully afterwards, so the frontend build is
-verified while `bun run lint` is **not**. Re-running `bun install` once the
-tarball cache settles is the fix.
-
-### 5.2 A note on rows 9–10
-
-`rustfmt` **parses** Rust but does not type-check it. Rows 9–10 therefore prove
-the new Tauri code is syntactically valid and correctly formatted. They do **not**
-prove it compiles. Type errors in `src-tauri/src/commands/voice_api.rs` remain
-possible and unverified.
-
-## 6. Reproducing this environment
-
-```powershell
-# 1. Per-user portable toolchain (no admin)
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/setup_portable_toolchain.ps1
-
-# 2. GNU host toolchain, leaves the default toolchain untouched
-rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal
-rustup component add --toolchain stable-x86_64-pc-windows-gnu rustfmt clippy
-
-# 3. Load the environment into the current shell
-. .\tools\dev_env.ps1
-
-# 4. Build and test the voice-API crate
-cd handy-fork\crates\handy-voice-api
-cargo +stable-x86_64-pc-windows-gnu test --all-features
-
-# 5. Build the frontend
-cd ..\..
-bun install
-bun run build
-```
-
-## 7. How to unblock the full build
-
-Any one of these closes the gap. None of them can be done from a non-elevated
-session, which is why they are recorded rather than performed.
-
-1. **Install MSVC Build Tools** — this is the only route that can produce a real
-   build of this application, because ONNX Runtime has no GNU-ABI Windows
-   binaries (section 3.1). It requires administrator rights:
-
-   ```powershell
-   winget install Microsoft.VisualStudio.2022.BuildTools --override `
-     "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
-   ```
-
-   Then, per `BUILD.md`: `winget install Kitware.CMake`, `winget install
-   KhronosGroup.VulkanSDK`, set `ORT_LIB_LOCATION` to a prebuilt ONNX Runtime
-   (`onnxruntime-win-x64-*.zip`), and `bun run tauri dev`.
-
-2. **Build on a CI runner** with the native toolchain — see
-   `.github/workflows/` and section 8.
-
-3. **Build on another machine** that already satisfies `BUILD.md`.
-
-> Do not expect the GNU target to become viable later: the ONNX Runtime
-> limitation is an upstream packaging decision, not a local misconfiguration.
-
-## 8. Cross-platform status
-
-Nothing here has been built or run on any platform. The table records what the
-upstream CI matrix covers, which is a statement about upstream, not about this
-fork.
+Upstream's CI matrix is a statement about **upstream**, not about this fork. No
+platform other than Windows x86_64 has been built or run here.
 
 | Target | Upstream CI builds it | This fork verified |
 |---|:---:|:---:|
-| macOS Apple Silicon (aarch64) | ✅ | ❌ not verified |
-| macOS Intel (x86_64) | ✅ | ❌ not verified |
-| Windows x86_64 | ✅ | ❌ blocked (no MSVC) |
-| Windows ARM64 | ✅ | ❌ not verified |
-| Linux x86_64 | ✅ | ❌ not verified |
-| Linux ARM64 | ✅ | ❌ not verified |
+| macOS Apple Silicon (aarch64) | ✅ | ❌ not tested |
+| macOS Intel (x86_64) | ✅ | ❌ not tested |
+| **Windows x86_64** | ✅ | ✅ **built, launched, tests pass** |
+| Windows ARM64 | ✅ | ❌ not tested |
+| Linux x86_64 | ✅ | ❌ not tested |
+| Linux ARM64 | ✅ | ❌ not tested |
 
-## 9. Environment deviations worth knowing
+CI added by this fork (`.github/workflows/voice-api.yml`) runs the portable
+crate's tests, clippy and formatting on **Linux, macOS and Windows** — real
+cross-platform evidence for the voice-API layer, and the cheapest way to keep it
+verified. It does not build the application.
 
-* The checkout path contains a space (`C:\Users\Nova\Project Brief`). Some native
-  build systems mishandle this. `tools/dev_env.ps1` sets a short
-  `CARGO_TARGET_DIR` (`C:\Users\Nova\t`) so build output avoids it, following the
-  `CARGO_TARGET_DIR` recommendation in `BUILD.md`.
-* Build artifacts are written **outside** the repository, to `C:\Users\Nova\t`,
-  so `git status` stays clean and no multi-gigabyte `target/` tree is created
-  inside the checkout.
+## 10. Environment deviations worth knowing
+
+* The checkout path contains a space (`C:\Users\Nova\Project Brief`). Build
+  artefacts are written outside the repository to `C:\Users\Nova\t`.
+* The Vulkan SDK's installer sets `VULKAN_SDK` at **machine** scope, so an
+  already-running shell will not see it. `tools/msvc_env.ps1` recovers it
+  explicitly rather than silently building without a GPU backend.
+* `cl.exe` and `link.exe` are only available inside the developer environment;
+  `tools/msvc_env.ps1` imports `vcvars64.bat` into the current session and does not
+  modify any persistent user setting.

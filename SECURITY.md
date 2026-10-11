@@ -157,15 +157,21 @@ is why a debug build should never be used with real dictation.
 
 Stated plainly so nobody mistakes absence of evidence for evidence of safety:
 
-1. **The application has not been built or run** in this environment. No runtime
-   behaviour, including the credential store integration, has been exercised. See
-   `docs/BUILD_BASELINE.md`.
-2. `src-tauri/src/commands/voice_api.rs` has been checked for syntax and
-   formatting only — **not type-checked**.
-3. The front-end (JavaScript) dependency tree has **not** been licence- or
+1. **The application has been built and launched, but not exercised.** It starts,
+   initialises the Vulkan backend and creates its windows; no dictation has been
+   performed, so no runtime behaviour of the credential-store integration, the
+   transcript bridge or the upload path has been observed end to end. See
+   `docs/PHASE2_TEST_REPORT.md`.
+2. **The OS credential store is not covered by an automated test.** The crate
+   tests use an in-memory store; `OsSecretStore` compiles and is wired up, but a
+   real write/read against Keychain, Credential Manager or Secret Service has not
+   been performed.
+3. **Uploads were verified against a local loopback test server only** — plain
+   HTTP, no TLS handshake, no production third-party API.
+4. The front-end (JavaScript) dependency tree has **not** been licence- or
    vulnerability-audited.
-4. No penetration testing, fuzzing, or independent review has been performed.
-5. Upstream's own logging, IPC surface, and CSP configuration have not been
+5. No penetration testing, fuzzing, or independent review has been performed.
+6. Upstream's own logging, IPC surface, and CSP configuration have not been
    audited as part of this work.
 
 ## Configuration hardening notes

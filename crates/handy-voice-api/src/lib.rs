@@ -80,6 +80,7 @@ pub mod error;
 pub mod export;
 pub mod schema;
 pub mod secrets;
+pub mod stream_adapter;
 pub mod time;
 pub mod transcript;
 
@@ -95,6 +96,7 @@ pub mod prelude {
     pub use crate::secrets::{
         account_name, MemorySecretStore, SecretStore, SecretString, SECRET_SERVICE,
     };
+    pub use crate::stream_adapter::{AdapterEvents, StreamEventAdapter};
     pub use crate::transcript::{
         ApplyOutcome, EngineInfo, SegmentKind, Transcript, TranscriptError, TranscriptManager,
         TranscriptSegment, TranscriptUpdate, SCHEMA_VERSION,
