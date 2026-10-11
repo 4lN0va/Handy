@@ -20,10 +20,10 @@
 # that would measure formatting rather than recognition.
 
 param(
-    [string]$Exe = 'C:\Users\<you>\t\handy-msvc\debug\handy.exe',
+    [string]$Exe = (Join-Path $env:USERPROFILE 't\handy-msvc\debug\handy.exe'),
     [string]$ModelId = 'handy-computer/Breeze-ASR-25-gguf/Breeze-ASR-25-Q5_K_M.gguf',
-    [string]$CorpusDir = 'C:\Users\<you>\Project Brief\_phase3_corpus',
-    [string]$OutJson = 'C:\Users\<you>\Project Brief\_phase3_corpus\asr_results.json',
+    [string]$CorpusDir = (Join-Path (Split-Path -Parent $PSScriptRoot) '_phase3_corpus'),
+    [string]$OutJson = (Join-Path (Split-Path -Parent $PSScriptRoot) '_phase3_corpus\asr_results.json'),
     [int]$Repeat = 1
 )
 

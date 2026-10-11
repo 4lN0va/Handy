@@ -25,7 +25,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$TargetDir = 'C:\Users\<you>\t\handy-msvc'
+$TargetDir = Join-Path $env:USERPROFILE 't\handy-msvc'
 $Profile = if ($Release) { 'release' } else { 'debug' }
 $Exe = Join-Path $TargetDir "$Profile\handy.exe"
 $ViteUrl = "http://localhost:$Port"
@@ -49,14 +49,14 @@ if ($existing) {
 if (-not $NoBuild) {
     Write-Host "[1/4] loading the MSVC environment..." -ForegroundColor Cyan
     . (Join-Path $PSScriptRoot 'msvc_env.ps1')
-    $tc = 'C:\Users\<you>\toolchain'
+    $tc = Join-Path $env:USERPROFILE 'toolchain'
     $env:PATH = "$tc\ninja;$tc\bun\bun-windows-x64;$env:PATH"
     $env:CMAKE_GENERATOR = 'Ninja'
     $env:CMAKE_MAKE_PROGRAM = "$tc\ninja\ninja.exe"
     $env:CARGO_TARGET_DIR = $TargetDir
 } else {
     # Even when skipping the build we still need bun on PATH.
-    $env:PATH = "C:\Users\<you>\toolchain\bun\bun-windows-x64;$env:PATH"
+    $env:PATH = "$env:USERPROFILE\toolchain\bun\bun-windows-x64;$env:PATH"
 }
 
 # --- 2. make sure the front end is built ------------------------------------

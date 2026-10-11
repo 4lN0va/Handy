@@ -22,7 +22,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-$ToolchainRoot = 'C:\Users\<you>\toolchain'
+$ToolchainRoot = Join-Path $env:USERPROFILE 'toolchain'
 $MinGwBin = Join-Path $ToolchainRoot 'w64devkit\w64devkit\bin'
 
 if (-not (Test-Path $MinGwBin)) {
@@ -37,7 +37,7 @@ $env:CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = Join-Path $MinGwBin 'x86_64-w64
 # are involved. BUILD.md recommends a short CARGO_TARGET_DIR for the same
 # reason. This is per-shell only and does NOT touch the user's environment.
 if (-not $env:CARGO_TARGET_DIR) {
-    $env:CARGO_TARGET_DIR = 'C:\Users\<you>\t'
+    $env:CARGO_TARGET_DIR = Join-Path $env:USERPROFILE 't'
 }
 
 # Portable CMake/Ninja/Bun, if they were extracted.
