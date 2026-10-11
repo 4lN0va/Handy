@@ -159,23 +159,6 @@ export const ContinuousPanel: React.FC = () => {
     }
   };
 
-  const stop = async () => {
-    setBusy(true);
-    setError(null);
-    setNotice(null);
-    try {
-      const result = await commands.continuousStop();
-      if (result.status === "error") {
-        setError(result.error);
-      } else {
-        setState(parse<ContinuousState>(result.data, IDLE));
-        setNotice(t("transcript.continuous.stoppedNotice"));
-      }
-    } finally {
-      setBusy(false);
-      void refresh();
-    }
-  };
 
   const saveBridge = async () => {
     if (!bridge) return;
@@ -249,9 +232,6 @@ export const ContinuousPanel: React.FC = () => {
               {t("transcript.continuous.transcribing")}: {state.pending_segments}
             </span>
           )}
-          <Button onClick={() => void stop()} disabled={busy}>
-            {t("transcript.continuous.stop")}
-          </Button>
         </div>
       )}
 

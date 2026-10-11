@@ -392,37 +392,40 @@ impl ContinuousManager {
     }
 }
 
-/// Whether continuous listening is armed, without touching the session.
+/// Handle a transcription-shortcut event on behalf of continuous mode.
 ///
-/// Used by the shortcut's stop path: while armed, the key belongs to continuous
-/// mode and must not tear down the session it started.
-pub fn is_armed(app: &AppHandle) -> bool {
-    app.try_state::<Arc<ContinuousManager>>()
-        .map(|state| state.inner().is_enabled())
-        .unwrap_or(false)
-}
-/// Handle a transcription-shortcut press on behalf of continuous mode.
+/// Returns `true` when the event was consumed, meaning the caller must **not**
+/// route it to the transcription coordinator. Returns `false` when the feature
+/// is disarmed, leaving the shortcut exactly as it was before this feature.
 ///
-/// Returns `true` when the press belonged to continuous mode, meaning the caller
-/// must **not** run the ordinary single-utterance path. Returns `false` when the
-/// feature is not armed, leaving the shortcut exactly as it was before this
-/// feature existed.
+/// # Why this is intercepted here and not inside the action
 ///
-/// The toggle in the UI only arms the feature; it deliberately does not start
-/// anything. Starting and stopping belong to the shortcut, so that a user who
-/// has not switched continuous listening on keeps the original behaviour of the
-/// same key.
+/// The coordinator keeps its own state machine (idle / recording / stopping).
+/// Ignoring a press further down, inside `TranscribeAction`, left the
+/// coordinator believing a recording was in progress even though continuous mode
+/// had taken over. The visible result was a key that could start a session but
+/// never stop it, and could not restart one after a stop from the UI - the
+/// coordinator answered every later press with `stop`, which was then ignored.
 ///
-/// On an error the press is still reported as handled: falling through to the
-/// ordinary recording path as well would start a second, competing recording,
-/// which is more confusing than a logged failure.
-pub fn handle_shortcut(app: &AppHandle) -> bool {
+/// Consuming the event before the coordinator sees it keeps that state machine
+/// untouched, so it stays idle for as long as continuous mode owns the key.
+///
+/// Only the press toggles; the release is consumed and ignored. That makes the
+/// key a toggle regardless of the configured activation mode, which is what
+/// continuous listening needs: a push-to-talk release must not end a session the
+/// user expects to keep running.
+pub fn handle_shortcut_event(app: &AppHandle, is_pressed: bool) -> bool {
     let Some(state) = app.try_state::<Arc<ContinuousManager>>() else {
         return false;
     };
     let manager = state.inner().clone();
     if !manager.is_enabled() {
         return false;
+    }
+
+    // Consume the release without acting on it.
+    if !is_pressed {
+        return true;
     }
 
     let running = manager.state().running;
@@ -433,19 +436,18 @@ pub fn handle_shortcut(app: &AppHandle) -> bool {
     };
 
     match outcome {
-        Ok(state) => {
-            log::info!(
-                "continuous: shortcut {} the session (running={})",
-                if running { "stopped" } else { "started" },
-                state.running
-            );
-        }
-        Err(e) => {
-            log::warn!(
-                "continuous: shortcut could not {} the session: {e}",
-                if running { "stop" } else { "start" }
-            );
-        }
+        Ok(state) => log::info!(
+            "continuous: shortcut {} the session (running={})",
+            if running { "stopped" } else { "started" },
+            state.running
+        ),
+        // Reported as consumed even on failure: falling through to the
+        // coordinator as well would start a second, competing recording, which
+        // is more confusing than a logged failure.
+        Err(e) => log::warn!(
+            "continuous: shortcut could not {} the session: {e}",
+            if running { "stop" } else { "start" }
+        ),
     }
     true
 }
