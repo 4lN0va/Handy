@@ -101,7 +101,14 @@ impl Default for ContinuousSettings {
 
 impl ContinuousSettings {
     fn sanitized(mut self) -> Self {
-        self.pause_ms = self.pause_ms.clamp(200, 10_000);
+        // Must outlast the recorder's own post-speech hangover
+        // (VAD_OFFLINE_HANGOVER_MS, 450ms). Cutting earlier than that finds the
+        // VAD still in its speech state, and `stop_recording` then withholds the
+        // tail - the last syllable of the sentence - so the segment is
+        // truncated and can transcribe to nothing at all. A short pause_ms looks
+        // like a responsiveness win and is actually a correctness bug.
+        let min_pause = crate::audio_toolkit::vad::VAD_OFFLINE_HANGOVER_MS + 150;
+        self.pause_ms = self.pause_ms.clamp(min_pause, 10_000);
         self.min_segment_ms = self.min_segment_ms.clamp(100, 5_000);
         self.max_segment_ms = self.max_segment_ms.clamp(2_000, 600_000);
         // Never let a segment cap sit below the pause that closes a segment, or

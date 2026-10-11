@@ -74,7 +74,11 @@ export const ContinuousPanel: React.FC = () => {
   const { t } = useTranslation();
   const [state, setState] = useState<ContinuousState>(IDLE);
   const [settings, setSettings] = useState<ContinuousSettings | null>(null);
-  const [enabled, setEnabled] = useState(true);
+  // Whether a session is actually running, which is not the same as the
+  // persisted `enabled` flag. `enabled` survives a restart; a running session
+  // does not. Showing the flag made the switch read ON after a relaunch while
+  // nothing was listening at all.
+  const [enabled, setEnabled] = useState(false);
   const [bridge, setBridge] = useState<BridgeConfig | null>(null);
   const [bridgeStatus, setBridgeStatus] = useState<BridgeStatus | null>(null);
   const [endpointDraft, setEndpointDraft] = useState("");
@@ -83,14 +87,15 @@ export const ContinuousPanel: React.FC = () => {
   const [notice, setNotice] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [s, cfg, bs, en] = await Promise.all([
+    const [s, cfg, bs] = await Promise.all([
       commands.continuousState(),
       commands.bridgeGetConfig(),
       commands.bridgeStatus(),
-      commands.continuousEnabled(),
     ]);
-    setState(parse<ContinuousState>(s, IDLE));
-    setEnabled(en === "true");
+    const parsed = parse<ContinuousState>(s, IDLE);
+    setState(parsed);
+    // Track the live session, not the persisted flag.
+    setEnabled(parsed.running);
     setBridge((prev) => {
       const next = parse<BridgeConfig>(cfg, prev ?? ({} as BridgeConfig));
       setEndpointDraft((d) => (d === "" ? next.endpoint ?? "" : d));
