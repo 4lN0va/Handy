@@ -2,9 +2,9 @@ mod actions;
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 mod apple_intelligence;
 mod audio_feedback;
-mod bridge;
 pub mod audio_toolkit;
 mod autostart;
+mod bridge;
 mod catalog;
 mod chinese_script;
 pub mod cli;
@@ -805,7 +805,7 @@ pub fn run(cli_args: CliArgs) {
             commands::history::retry_history_entry_transcription,
             commands::history::update_history_limit,
             commands::history::update_recording_retention_period,
-                                                                    commands::voice_api::voice_api_begin_session,
+            commands::voice_api::voice_api_begin_session,
             commands::voice_api::voice_api_apply_update,
             commands::voice_api::voice_api_record_error,
             commands::voice_api::voice_api_get_transcript,
@@ -813,17 +813,17 @@ pub fn run(cli_args: CliArgs) {
             commands::voice_api::voice_api_clear_transcript,
             commands::voice_api::voice_api_export_to_file,
             commands::voice_api::voice_api_import_from_file,
-                                            commands::continuous::continuous_start,
-    commands::continuous::continuous_stop,
-    commands::continuous::continuous_state,
-    commands::continuous::continuous_get_settings,
-    commands::continuous::continuous_set_settings,
-    commands::continuous::continuous_enabled,
-    commands::continuous::continuous_set_enabled,
-    commands::continuous::bridge_get_config,
-    commands::continuous::bridge_set_config,
-    commands::continuous::bridge_status,
-    commands::continuous::bridge_heartbeat_now,
+            commands::continuous::continuous_start,
+            commands::continuous::continuous_stop,
+            commands::continuous::continuous_state,
+            commands::continuous::continuous_get_settings,
+            commands::continuous::continuous_set_settings,
+            commands::continuous::continuous_enabled,
+            commands::continuous::continuous_set_enabled,
+            commands::continuous::bridge_get_config,
+            commands::continuous::bridge_set_config,
+            commands::continuous::bridge_status,
+            commands::continuous::bridge_heartbeat_now,
             helpers::clamshell::is_laptop,
         ])
         .events(collect_events![

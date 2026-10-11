@@ -952,7 +952,9 @@ impl Drop for NetworkOperation {
 /// not have to guess.
 #[tauri::command]
 #[specta::specta]
-pub fn voice_api_upload_preview(manager: State<'_, Arc<VoiceApiManager>>) -> Result<String, String> {
+pub fn voice_api_upload_preview(
+    manager: State<'_, Arc<VoiceApiManager>>,
+) -> Result<String, String> {
     manager
         .with_session(|session| {
             let t = session.transcript();
@@ -994,10 +996,7 @@ mod tests {
     /// Sharing matters when two managers must see the same credentials — in the
     /// real app the OS credential store is process-wide, so a fresh manager
     /// still finds a previously stored key.
-    fn manager_with_store(
-        dir: &std::path::Path,
-        store: Arc<MemorySecretStore>,
-    ) -> VoiceApiManager {
+    fn manager_with_store(dir: &std::path::Path, store: Arc<MemorySecretStore>) -> VoiceApiManager {
         VoiceApiManager::new(dir.join(CONFIG_FILE), store)
     }
 
@@ -1065,7 +1064,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let m = manager_in(dir.path());
         assert!(m.ingest_stream_text("你好，我想測試", ""));
-        assert!(!m.ingest_stream_text("你好", ""), "an older prefix is stale");
+        assert!(
+            !m.ingest_stream_text("你好", ""),
+            "an older prefix is stale"
+        );
         assert_eq!(transcript_of(&m).segments[0].text, "你好，我想測試");
     }
 
@@ -1110,7 +1112,9 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let m = manager_in(dir.path());
 
-        let permit = m.begin_network_operation().expect("first should be admitted");
+        let permit = m
+            .begin_network_operation()
+            .expect("first should be admitted");
         let second = m.begin_network_operation();
         assert!(second.is_err(), "a concurrent operation must be refused");
         assert!(second.unwrap_err().to_string().contains("already running"));
@@ -1166,7 +1170,10 @@ mod tests {
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed["segment_count"], 2);
         assert_eq!(parsed["final_segment_count"], 1);
-        assert!(parsed["preview"].as_str().unwrap().contains("已確認的內容。"));
+        assert!(parsed["preview"]
+            .as_str()
+            .unwrap()
+            .contains("已確認的內容。"));
     }
 
     #[test]
@@ -1238,7 +1245,10 @@ mod tests {
         }"#;
         let config: ApiConfig = serde_json::from_str(json).expect("GUI payload must deserialize");
         assert_eq!(config.method, HttpMethod::Post);
-        assert_eq!(config.headers.get("X-Tenant").map(String::as_str), Some("acme"));
+        assert_eq!(
+            config.headers.get("X-Tenant").map(String::as_str),
+            Some("acme")
+        );
         assert!(matches!(
             config.request_format,
             RequestFormat::Wrapped { .. }

@@ -166,10 +166,7 @@ impl ContinuousManager {
     }
 
     pub fn settings(&self) -> ContinuousSettings {
-        self.settings
-            .lock()
-            .map(|g| g.clone())
-            .unwrap_or_default()
+        self.settings.lock().map(|g| g.clone()).unwrap_or_default()
     }
 
     /// Whether the continuous-listening feature is switched on.
@@ -218,13 +215,18 @@ impl ContinuousManager {
     }
 
     fn room(&self) -> Arc<AudioRecordingManager> {
-        self.app.state::<Arc<AudioRecordingManager>>().inner().clone()
+        self.app
+            .state::<Arc<AudioRecordingManager>>()
+            .inner()
+            .clone()
     }
 
     fn transcriber(&self) -> Arc<TranscriptionManager> {
-        self.app.state::<Arc<TranscriptionManager>>().inner().clone()
+        self.app
+            .state::<Arc<TranscriptionManager>>()
+            .inner()
+            .clone()
     }
-
 
     fn activity(&self) -> Option<Arc<SpeechActivity>> {
         self.room().speech_activity()
@@ -288,15 +290,16 @@ impl ContinuousManager {
         let stop = Arc::new(AtomicBool::new(false));
         let segments = Arc::new(std::sync::atomic::AtomicU64::new(0));
         let pending = Arc::new(std::sync::atomic::AtomicU64::new(0));
-        let session_id = format!(
-            "cont-{}",
-            chrono::Utc::now().format("%Y%m%d-%H%M%S")
-        );
+        let session_id = format!("cont-{}", chrono::Utc::now().format("%Y%m%d-%H%M%S"));
 
         // --- transcriber worker: one segment at a time, in order ---------------
         let (tx, rx) = mpsc::channel::<Vec<f32>>();
-        let transcriber_handle =
-            spawn_transcriber(self.app.clone(), rx, Arc::clone(&stop), Arc::clone(&pending));
+        let transcriber_handle = spawn_transcriber(
+            self.app.clone(),
+            rx,
+            Arc::clone(&stop),
+            Arc::clone(&pending),
+        );
 
         // --- monitor: watches silence and closes segments ----------------------
         let monitor_handle = spawn_monitor(
@@ -324,7 +327,11 @@ impl ContinuousManager {
 
         // Tell the bridge we are recording, immediately rather than waiting for
         // the next heartbeat interval.
-        let bridge = self.app.state::<Arc<crate::bridge::Bridge>>().inner().clone();
+        let bridge = self
+            .app
+            .state::<Arc<crate::bridge::Bridge>>()
+            .inner()
+            .clone();
         bridge.set_recording(true);
         bridge.set_activity("recording");
         bridge.heartbeat_now();
@@ -378,7 +385,11 @@ impl ContinuousManager {
             activity.reset();
         }
 
-        let bridge = self.app.state::<Arc<crate::bridge::Bridge>>().inner().clone();
+        let bridge = self
+            .app
+            .state::<Arc<crate::bridge::Bridge>>()
+            .inner()
+            .clone();
         bridge.set_recording(false);
         bridge.set_activity("idle");
         bridge.heartbeat_now();

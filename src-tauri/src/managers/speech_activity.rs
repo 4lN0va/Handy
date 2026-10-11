@@ -63,10 +63,7 @@ use std::time::Instant;
 /// negative or enormous and cut a segment at the wrong moment.
 pub fn monotonic_ms() -> u64 {
     static ORIGIN: OnceLock<Instant> = OnceLock::new();
-    ORIGIN
-        .get_or_init(Instant::now)
-        .elapsed()
-        .as_millis() as u64
+    ORIGIN.get_or_init(Instant::now).elapsed().as_millis() as u64
 }
 
 /// Level (0.0-1.0) below which a chunk counts as silence.
@@ -231,5 +228,4 @@ mod tests {
         assert_eq!(a.voiced_chunks(), 1, "now below the raised threshold");
         assert_eq!(a.last_voice_ms(), 100);
     }
-
 }
