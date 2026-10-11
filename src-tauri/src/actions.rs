@@ -386,6 +386,14 @@ pub(crate) async fn process_transcription_output(
 
 impl ShortcutAction for TranscribeAction {
     fn start(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+        // Continuous listening: when the feature is armed, this key starts or
+        // stops a continuous session instead of a single-utterance recording.
+        // When it is not armed this returns false at once and everything below
+        // is the original behaviour, unchanged.
+        if crate::managers::continuous::handle_shortcut(app) {
+            return;
+        }
+
         let start_time = Instant::now();
         debug!("TranscribeAction::start called for binding: {}", binding_id);
 
@@ -562,6 +570,15 @@ impl ShortcutAction for TranscribeAction {
     }
 
     fn stop(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+        // While continuous listening is armed, this key belongs to continuous
+        // mode, which `start` above already used as a toggle. Tearing the
+        // recording down here would end the session the same key was meant to
+        // keep running - and would do so on every push-to-talk release.
+        if crate::managers::continuous::is_armed(app) {
+            debug!("TranscribeAction::stop ignored: continuous listening is armed");
+            return;
+        }
+
         // Prevent a slow microphone from emitting a ready event or start chime
         // after the user has already requested stop.
         app.state::<Arc<AudioRecordingManager>>()

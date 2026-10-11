@@ -87,15 +87,16 @@ export const ContinuousPanel: React.FC = () => {
   const [notice, setNotice] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [s, cfg, bs] = await Promise.all([
+    const [s, cfg, bs, en] = await Promise.all([
       commands.continuousState(),
       commands.bridgeGetConfig(),
       commands.bridgeStatus(),
+      commands.continuousEnabled(),
     ]);
     const parsed = parse<ContinuousState>(s, IDLE);
     setState(parsed);
     // Track the live session, not the persisted flag.
-    setEnabled(parsed.running);
+    setEnabled(en === "true");
     setBridge((prev) => {
       const next = parse<BridgeConfig>(cfg, prev ?? ({} as BridgeConfig));
       setEndpointDraft((d) => (d === "" ? next.endpoint ?? "" : d));
@@ -127,40 +128,30 @@ export const ContinuousPanel: React.FC = () => {
    * flag-only toggle left the feature unable to start at all. Turning it on
    * records, turning it off stops.
    */
+  /**
+   * Arms or disarms continuous listening. It does not start anything.
+   *
+   * Arming only changes what the transcription shortcut does: while armed the
+   * key starts or stops a continuous session, and while disarmed the key behaves
+   * exactly as it always has. Starting the session from here would make the
+   * switch and the shortcut two competing ways to do the same thing.
+   */
   const toggleEnabled = async () => {
     const next = !enabled;
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
-      if (next) {
-        // Arm first: `continuous_start` refuses when the feature is disabled.
-        const armed = await commands.continuousSetEnabled(true);
-        if (armed.status === "error") {
-          setError(armed.error);
-          return;
-        }
-        const started = await commands.continuousStart();
-        if (started.status === "error") {
-          setError(started.error);
-          setEnabled(false);
-          void commands.continuousSetEnabled(false);
-          return;
-        }
-        setState(parse<ContinuousState>(started.data, IDLE));
-        setNotice(t("transcript.continuous.startedNotice"));
-        setEnabled(true);
+      const result = await commands.continuousSetEnabled(next);
+      if (result.status === "error") {
+        setError(result.error);
       } else {
-        const stopped = await commands.continuousStop();
-        if (stopped.status === "error") {
-          setError(stopped.error);
-          return;
-        }
-        setState(parse<ContinuousState>(stopped.data, IDLE));
-        setNotice(t("transcript.continuous.stoppedNotice"));
-        const disarmed = await commands.continuousSetEnabled(false);
-        if (disarmed.status === "error") setError(disarmed.error);
-        setEnabled(false);
+        setEnabled(next);
+        setNotice(
+          next
+            ? t("transcript.continuous.armedNotice")
+            : t("transcript.continuous.disarmedNotice"),
+        );
       }
     } finally {
       setBusy(false);

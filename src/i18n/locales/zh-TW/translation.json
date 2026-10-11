@@ -779,7 +779,9 @@
       "sent": "已送出事件",
       "heartbeats": "心跳",
       "failed": "失敗",
-      "silenceLevel": "靜音門檻（0.05-0.95）"
+      "silenceLevel": "靜音門檻（0.05-0.95）",
+      "armedNotice": "已開啟持續聆聽。按轉錄快捷鍵開始或停止。",
+      "disarmedNotice": "已關閉持續聆聽。快捷鍵維持原本行為。"
     }
   }
 }

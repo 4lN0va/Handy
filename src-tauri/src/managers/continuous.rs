@@ -392,6 +392,63 @@ impl ContinuousManager {
     }
 }
 
+/// Whether continuous listening is armed, without touching the session.
+///
+/// Used by the shortcut's stop path: while armed, the key belongs to continuous
+/// mode and must not tear down the session it started.
+pub fn is_armed(app: &AppHandle) -> bool {
+    app.try_state::<Arc<ContinuousManager>>()
+        .map(|state| state.inner().is_enabled())
+        .unwrap_or(false)
+}
+/// Handle a transcription-shortcut press on behalf of continuous mode.
+///
+/// Returns `true` when the press belonged to continuous mode, meaning the caller
+/// must **not** run the ordinary single-utterance path. Returns `false` when the
+/// feature is not armed, leaving the shortcut exactly as it was before this
+/// feature existed.
+///
+/// The toggle in the UI only arms the feature; it deliberately does not start
+/// anything. Starting and stopping belong to the shortcut, so that a user who
+/// has not switched continuous listening on keeps the original behaviour of the
+/// same key.
+///
+/// On an error the press is still reported as handled: falling through to the
+/// ordinary recording path as well would start a second, competing recording,
+/// which is more confusing than a logged failure.
+pub fn handle_shortcut(app: &AppHandle) -> bool {
+    let Some(state) = app.try_state::<Arc<ContinuousManager>>() else {
+        return false;
+    };
+    let manager = state.inner().clone();
+    if !manager.is_enabled() {
+        return false;
+    }
+
+    let running = manager.state().running;
+    let outcome = if running {
+        manager.stop()
+    } else {
+        manager.start()
+    };
+
+    match outcome {
+        Ok(state) => {
+            log::info!(
+                "continuous: shortcut {} the session (running={})",
+                if running { "stopped" } else { "started" },
+                state.running
+            );
+        }
+        Err(e) => {
+            log::warn!(
+                "continuous: shortcut could not {} the session: {e}",
+                if running { "stop" } else { "start" }
+            );
+        }
+    }
+    true
+}
 fn load_settings(path: &PathBuf) -> ContinuousSettings {
     match std::fs::read_to_string(path) {
         Ok(text) => serde_json::from_str::<ContinuousSettings>(&text)
