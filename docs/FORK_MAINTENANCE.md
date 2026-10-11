@@ -42,8 +42,14 @@ not worth losing a working three-platform build for.
 
 ## 2. Repository layout
 
-`origin` in a clone made from upstream points at **`cjpais/Handy`**, not at this
-fork. That has to be corrected first, or work is never pushed anywhere.
+> **Already done in this working copy.** `origin` points at
+> `https://github.com/4lN0va/Handy.git` and `upstream` at
+> `https://github.com/cjpais/Handy.git`. The commands below are the recipe for a
+> fresh clone.
+>
+> A clone made from upstream starts with `origin` pointing at **`cjpais/Handy`**,
+> not at the fork. That has to be corrected first, or work is never pushed
+> anywhere.
 
 ```bash
 # `origin` is really upstream; rename it to say so.
