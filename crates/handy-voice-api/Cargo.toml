@@ -35,7 +35,25 @@ sha2 = "0.10"
 # because Cargo unions features across the dependency graph.
 reqwest = { version = "0.12", features = ["blocking", "json"], optional = true }
 url = { version = "2", optional = true }
-keyring = { version = "3", optional = true }
+
+# `keyring` v3 ships NO default credential-store backend: every platform backend
+# is an opt-in feature. Declaring it without features - which is what this file
+# originally did - compiles cleanly but makes writes silent no-ops that still
+# report success. The API key would appear saved and would not persist, and the
+# failure is invisible until a later run cannot authenticate.
+#
+# All three platform backends are enabled deliberately. keyring declares their
+# underlying crates under `[target.'cfg(target_os = ...)'.dependencies]`, so only
+# the backend for the platform actually being built is compiled; enabling the
+# others costs nothing. `crypto-rust` gives the Linux Secret Service session a
+# pure-Rust cipher, avoiding an OpenSSL build dependency.
+# Regression test: crates/handy-voice-api/tests/os_keyring.rs (run with --ignored).
+keyring = { version = "3", optional = true, features = [
+    "apple-native",
+    "windows-native",
+    "sync-secret-service",
+    "crypto-rust",
+] }
 
 [dev-dependencies]
 tempfile = "3"

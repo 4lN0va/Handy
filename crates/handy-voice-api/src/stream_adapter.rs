@@ -51,6 +51,16 @@ pub struct StreamEventAdapter {
     segment_seq: u64,
     /// The utterance currently being recognised, if any.
     active: Option<ActiveSegment>,
+    /// Text of the most recently finalized segment.
+    ///
+    /// Upstream stops feeding an utterance once it is finalized, but a partial
+    /// that was already in flight can still arrive afterwards. Such a straggler
+    /// is indistinguishable from a new utterance by payload alone — both arrive
+    /// with no active segment — so the only usable signal is whether the text
+    /// rewinds into the utterance that was just locked. Without this, a late
+    /// partial creates a phantom second segment and the transcript visibly
+    /// duplicates itself.
+    last_finalized: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -83,6 +93,7 @@ impl StreamEventAdapter {
     pub fn reset(&mut self) {
         self.active = None;
         self.segment_seq = 0;
+        self.last_finalized = None;
     }
 
     fn next_segment_id(&mut self) -> String {
@@ -105,6 +116,24 @@ impl StreamEventAdapter {
             if full.trim().is_empty() {
                 return Vec::new();
             }
+
+            // A partial that rewinds into the utterance we just finalized is an
+            // in-flight straggler, not new speech. Accepting it would append a
+            // duplicate of text the user has already seen confirmed.
+            //
+            // The window closes by itself: as soon as a partial arrives that is
+            // not a prefix of the finalized text, it is treated as a new
+            // utterance and a segment is created. The one case this cannot
+            // distinguish is the user immediately repeating a phrase that is
+            // exactly a prefix of the previous one - and there, dropping it is
+            // the safer failure, because a silent omission is less misleading
+            // than a duplicated transcript.
+            if let Some(last) = self.last_finalized.as_ref() {
+                if !committed.is_empty() && last.starts_with(committed) {
+                    return Vec::new();
+                }
+            }
+
             let segment_id = self.next_segment_id();
             let update = TranscriptUpdate {
                 segment_id: segment_id.clone(),
@@ -157,6 +186,9 @@ impl StreamEventAdapter {
         // text it had actually committed — dropping the unconfirmed tail, which
         // the rewind has just invalidated — and begin a new segment.
         let previous = self.active.take().expect("active checked above");
+        // This Final locks text the model had committed, so it is what a
+        // straggler from this utterance must be compared against.
+        self.last_finalized = Some(previous.committed.clone());
         let mut events = vec![TranscriptUpdate {
             segment_id: previous.segment_id,
             revision: previous.revision + 1,
@@ -202,6 +234,7 @@ impl StreamEventAdapter {
                     // Nothing was ever recognised; do not create a blank segment.
                     return Vec::new();
                 }
+                self.last_finalized = Some(final_text.to_string());
                 vec![TranscriptUpdate {
                     segment_id: previous.segment_id,
                     revision: previous.revision + 1,
@@ -215,6 +248,14 @@ impl StreamEventAdapter {
                 if final_text.trim().is_empty() {
                     return Vec::new();
                 }
+                // The identical final text arriving twice with no utterance in
+                // between is a replay of the same recognition result, not a
+                // second utterance. Recording it again would duplicate the
+                // transcript verbatim.
+                if self.last_finalized.as_deref() == Some(final_text) {
+                    return Vec::new();
+                }
+                self.last_finalized = Some(final_text.to_string());
                 let segment_id = self.next_segment_id();
                 vec![TranscriptUpdate {
                     segment_id,
@@ -581,5 +622,108 @@ mod tests {
             5,
             "expected one distinct id per utterance: {ids:?}"
         );
+    }
+
+    #[test]
+    fn a_straggler_partial_after_final_does_not_create_a_phantom_segment() {
+        // The real-world sequence: the utterance is finalized, but a partial
+        // that was already in flight arrives afterwards. It arrives with no
+        // active segment, so payload alone cannot distinguish it from new
+        // speech; only the fact that it rewinds into locked text gives it away.
+        //
+        // Before this was handled, the transcript grew a second, half-formed
+        // segment duplicating text the user had already seen confirmed. This was
+        // found by driving the running application, not by unit tests.
+        let mut adapter = StreamEventAdapter::new();
+        let mut m = manager();
+
+        drive(&mut m, adapter.on_stream_text("你好，我想", "測試"));
+        drive(&mut m, adapter.on_final("你好，我想測試語音辨識。"));
+
+        assert_eq!(m.transcript().segments.len(), 1);
+        assert!(m.transcript().segments[0].is_final);
+
+        // A straggler replaying an earlier prefix of the utterance just locked.
+        let events = adapter.on_stream_text("你好，我想", "測試");
+        assert!(
+            events.is_empty(),
+            "a straggler must produce no updates, got {events:?}"
+        );
+        assert_eq!(
+            m.transcript().segments.len(),
+            1,
+            "a straggler must not add a segment"
+        );
+        assert_eq!(m.transcript().segments[0].text, "你好，我想測試語音辨識。");
+    }
+
+    #[test]
+    fn a_straggler_does_not_block_the_next_real_utterance() {
+        // The guard must close by itself, or it would swallow the next thing the
+        // user says.
+        let mut adapter = StreamEventAdapter::new();
+        let mut m = manager();
+
+        drive(&mut m, adapter.on_stream_text("你好", ""));
+        drive(&mut m, adapter.on_final("你好。"));
+        // Straggler: ignored.
+        let straggler = adapter.on_stream_text("你好", "");
+        assert!(straggler.is_empty());
+
+        // Genuinely different speech: accepted.
+        let next = adapter.on_stream_text("今天天氣很好", "");
+        assert!(!next.is_empty(), "different speech must be accepted");
+        drive(&mut m, next);
+
+        let t = m.transcript();
+        assert_eq!(t.segments.len(), 2);
+        assert_eq!(t.segments[0].text, "你好。");
+        assert_eq!(t.segments[1].text, "今天天氣很好");
+        assert!(!t.segments[1].is_final);
+    }
+
+    #[test]
+    fn replaying_the_identical_final_does_not_duplicate_the_transcript() {
+        // A repeated final with no utterance in between is a replay of the same
+        // recognition result. Recording it again duplicated the transcript
+        // verbatim - observed in the running application.
+        let mut adapter = StreamEventAdapter::new();
+        let mut m = manager();
+
+        drive(&mut m, adapter.on_final("你好，我想測試語音辨識。"));
+        assert_eq!(m.transcript().segments.len(), 1);
+
+        let replay = adapter.on_final("你好，我想測試語音辨識。");
+        assert!(
+            replay.is_empty(),
+            "an identical replay must emit nothing, got {replay:?}"
+        );
+        assert_eq!(
+            m.transcript().segments.len(),
+            1,
+            "an identical replay must not duplicate the transcript"
+        );
+
+        // A different second utterance is still recorded.
+        let second = adapter.on_final("今天天氣很好。");
+        assert!(!second.is_empty());
+        drive(&mut m, second);
+        assert_eq!(m.transcript().segments.len(), 2);
+    }
+
+    #[test]
+    fn a_new_session_forgets_the_last_finalized_text() {
+        // After a session reset the guard must not suppress legitimate speech
+        // that happens to match the previous session's text.
+        let mut adapter = StreamEventAdapter::new();
+        let mut m = manager();
+
+        drive(&mut m, adapter.on_final("你好。"));
+        adapter.reset();
+        let m2 = manager();
+        let _ = m2;
+
+        let fresh = adapter.on_stream_text("你好", "");
+        assert!(!fresh.is_empty(), "a reset must clear the straggler guard");
     }
 }

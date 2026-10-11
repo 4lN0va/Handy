@@ -231,13 +231,56 @@ pub mod os_store {
             }
         }
 
+        /// Store a secret, then **verify it can be read back**.
+        ///
+        /// # Why the read-back exists
+        ///
+        /// `keyring` v3 has no default credential-store backend: every platform
+        /// backend is an opt-in feature. Built without one, it compiles happily
+        /// and `set_password` returns `Ok(())` while storing nothing — a silent
+        /// no-op that reports success. The user sees "key saved", the key is
+        /// gone, and the failure only surfaces later as an authentication error.
+        ///
+        /// This was not hypothetical: it is exactly what these tests found. See
+        /// `tests/os_keyring.rs`.
+        ///
+        /// Reading back converts that silent success into a loud, accurate error.
+        /// The cost is one extra credential-store read per save, which happens
+        /// only when a user sets a key.
         fn set(&self, account: &str, secret: &SecretString) -> Result<(), VoiceApiError> {
             self.entry(account)?
                 .set_password(secret.expose())
                 .map_err(|e| VoiceApiError::SecretStore {
                     account: account.to_string(),
                     message: e.to_string(),
-                })
+                })?;
+
+            match self.entry(account)?.get_password() {
+                Ok(stored) if stored == secret.expose() => Ok(()),
+                Ok(stored) => Err(VoiceApiError::SecretStore {
+                    account: account.to_string(),
+                    // Lengths only: the values themselves must never be logged.
+                    message: format!(
+                        "credential store accepted the value but returned different data \
+                         (wrote {} bytes, read {} bytes). The store may be misconfigured or \
+                         a credential-store backend may not be compiled in; the key was NOT \
+                         saved and no plaintext fallback was used.",
+                        secret.len(),
+                        stored.len()
+                    ),
+                }),
+                Err(keyring::Error::NoEntry) => Err(VoiceApiError::SecretStore {
+                    account: account.to_string(),
+                    message: "credential store reported success but the entry does not exist \
+                              afterwards; the key was NOT saved and no plaintext fallback was \
+                              used. A credential-store backend may not be compiled in."
+                        .to_string(),
+                }),
+                Err(e) => Err(VoiceApiError::SecretStore {
+                    account: account.to_string(),
+                    message: format!("could not verify the stored value: {e}"),
+                }),
+            }
         }
 
         fn delete(&self, account: &str) -> Result<(), VoiceApiError> {

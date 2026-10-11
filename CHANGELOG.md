@@ -10,6 +10,85 @@ currently publish versioned releases of its own.
 
 ## [Unreleased]
 
+### Phase 3 — real-world validation and hardening
+
+Operating the application found six defects, five of which unit tests could not
+reach. Three of them meant features were completely non-functional while every test
+passed.
+
+#### Fixed
+
+- **Every `voice_api` command failed at runtime.** `init` already returns
+  `Arc<VoiceApiManager>`, but `lib.rs` wrapped it in `Arc::new` again, so Tauri's
+  `TypeId` lookup for managed state missed. Added an explicit type annotation so a
+  double wrap is now a compile error.
+- **The API key was silently not stored.** `keyring` v3 has no default backend and
+  each platform backend is opt-in; declared without features it compiles and
+  `set_password` returns `Ok(())` while writing nothing. The platform backends are
+  now enabled, and `OsSecretStore::set` reads the value back so a silent no-op
+  becomes an accurate error.
+- **Uploads never reached the network.** The `reqwest::blocking::Client` was built
+  on the async command's thread; the blocking client starts its own runtime at
+  construction and fails there with "Failed to communicate successful startup". The
+  client is now built inside the `spawn_blocking` closure.
+- **The single-flight permit leaked permanently.** A `?` on the session lookup
+  returned before the manual release, leaving uploads and connection tests disabled
+  until restart. The permit is now an RAII guard released on `Drop`.
+- **A late partial after a final created a phantom segment**, and **replaying a
+  final duplicated the transcript**. The adapter now remembers the last finalized
+  text and ignores stragglers and identical replays, while still accepting genuinely
+  new speech.
+- Two scripts the documentation told the reader to use (`tools/dev_env.ps1`,
+  `tools/setup_portable_toolchain.ps1`) were missing from the repository.
+- `tools/fetch_model.ps1` looked for `source.repo_id`; in `catalog.json` the model
+  `id` *is* the repo id and `revision` is top-level.
+
+#### Added
+
+- `tools/gen_tts_corpus.ps1` + `tools/tts_corpus.json` — a Traditional Chinese
+  (zh-TW) speech corpus generated with Windows SAPI, giving real audio with an
+  exactly known ground truth for ASR testing without a microphone.
+- `tools/run_asr_corpus.ps1` — runs the real headless ASR path and scores the
+  output against the reference.
+- `tools/fetch_model.ps1` — downloads a model and verifies its SHA-256 against the
+  catalogue digest before installing it.
+- `tools/ui_probe.ps1` — a Windows UI Automation driver, which is how the broken
+  GUI rendering was discovered.
+- `tools/cdp_drive.mjs` — a WebView2 DevTools driver, used to read rendered state
+  and to inject real recognition events into the running app.
+- `tools/test_backend.mjs` — a loopback HTTP recorder for upload verification.
+  It redacts `Authorization` so a captured fixture cannot leak a credential.
+- `crates/handy-voice-api/tests/os_keyring.rs` — 8 tests against the **real** OS
+  credential store, `#[ignore]`d by default and scoped to a separate service name
+  so they cannot touch the application's key.
+- `docs/PHASE3_VALIDATION_PLAN.md`, `docs/PHASE3_TEST_REPORT.md`.
+
+#### Verified
+
+- Real ASR over the TTS corpus with Breeze-ASR-25 on Vulkan: **CER 0.0127**
+  (1 edit / 79 characters). One-time ~25 s Vulkan shader compilation on first use;
+  ~345–498 ms per utterance afterwards. **Synthetic speech — a best case, not
+  real-world accuracy.**
+- The event bridge end to end in the running app: real payloads produce live
+  `RECOGNIZING` text that settles into `CONFIRMED` with no duplication.
+- Real Windows Credential Manager write/read/update/delete: 8/8.
+- A real GUI-driven upload reaching a loopback backend with valid schema JSON,
+  intact Traditional Chinese, and a stable idempotency key.
+
+#### Known open issue
+
+- **Local duplicate-upload suppression never fires**, because a fresh `ApiClient`
+  is built per call and its `last_uploaded` memory is therefore always empty. The
+  content-derived idempotency key is stable across retries, so a server honouring
+  `Idempotency-Key` still will not double-store. The fix (cache the client in the
+  manager, invalidate on config/key change) is diagnosed but not implemented.
+
+#### Not verified
+
+Microphone capture, real human speech, any production third-party API, TLS
+against a real endpoint, and platforms other than Windows x86_64. See
+`docs/PHASE3_TEST_REPORT.md` §16.
+
 ### Phase 2 — integration
 
 #### Added

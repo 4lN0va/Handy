@@ -209,9 +209,15 @@ fn initialize_core_logic(app_handle: &AppHandle) {
 
     // Voice-API layer: transcript model, JSON export, custom backend upload.
     // Additive — it does not touch the audio pipeline or the ASR engines.
-    let voice_api_manager = Arc::new(
-        commands::voice_api::init(app_handle).expect("Failed to initialize voice API manager"),
-    );
+    //
+    // The explicit type annotation is load-bearing, not decoration. `init`
+    // already returns `Arc<VoiceApiManager>`; wrapping that in another `Arc::new`
+    // yields `Arc<Arc<VoiceApiManager>>`, which compiles cleanly and then fails
+    // at runtime because Tauri resolves managed state by TypeId. Every command
+    // taking the manager would answer "state not managed for field `manager`".
+    // With the annotation below the double wrap is a compile error.
+    let voice_api_manager: Arc<commands::voice_api::VoiceApiManager> =
+        commands::voice_api::init(app_handle).expect("Failed to initialize voice API manager");
 
     // Apply accelerator preferences before any model loads
     managers::transcription::apply_accelerator_settings(app_handle);

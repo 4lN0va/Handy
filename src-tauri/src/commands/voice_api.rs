@@ -138,20 +138,25 @@ impl VoiceApiManager {
     ///
     /// This is a `compare_exchange` rather than a check-then-set so two threads
     /// racing from a double click cannot both win.
-    fn begin_network_operation(&self) -> Result<(), VoiceApiError> {
+    ///
+    /// The returned guard **releases the permit when dropped**. That is not
+    /// stylistic: the first version released it with an explicit call on each
+    /// exit path, and the `?` on the session lookup returned before that call.
+    /// The permit was then held for the lifetime of the process, so every later
+    /// upload and connection test failed with "another network operation is
+    /// already running" until the app was restarted. Tying the release to `Drop`
+    /// makes that class of leak impossible.
+    fn begin_network_operation(&self) -> Result<NetworkOperation, VoiceApiError> {
         self.network_in_flight
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-            .map(|_| ())
+            .map(|_| NetworkOperation {
+                flag: Arc::clone(&self.network_in_flight),
+            })
             .map_err(|_| {
                 VoiceApiError::Config(
                     "another network operation is already running; wait for it to finish".into(),
                 )
             })
-    }
-
-    /// Release the single-flight network permit.
-    fn end_network_operation(&self) {
-        self.network_in_flight.store(false, Ordering::Release);
     }
 
     /// The OS-credential-store backed manager used by the running app.
@@ -748,28 +753,34 @@ pub fn voice_api_import_from_file(
 pub async fn voice_api_test_connection(
     manager: State<'_, Arc<VoiceApiManager>>,
 ) -> Result<String, String> {
-    // Single-flight: a double click must not launch two probes.
-    manager.begin_network_operation().map_err(err)?;
+    // Single-flight: a double click must not launch two probes. The permit is
+    // released when `_permit` drops, on every exit path including the `?`s
+    // below.
+    let _permit = manager.begin_network_operation().map_err(err)?;
 
     let sample = manager
         .with_session(|session| session.transcript().clone())
         .map_err(err)?;
-    let client = match manager.client() {
-        Ok(client) => client,
-        Err(e) => {
-            manager.end_network_operation();
-            return Err(err(e));
-        }
-    };
 
     // Blocking I/O runs on a worker thread so the GUI and the audio thread are
     // never blocked by a slow endpoint.
-    let result = tauri::async_runtime::spawn_blocking(move || client.test_connection(&sample))
-        .await
-        .map_err(err);
-    manager.end_network_operation();
+    //
+    // The client is constructed *inside* the closure, and that matters.
+    // `reqwest::blocking::Client` starts its own background runtime when it is
+    // built. Building it on a Tokio worker thread makes that handshake fail with
+    // "Failed to communicate successful startup", after which every request dies
+    // before reaching the network - no upload, no connection test, and nothing
+    // in the server log to explain it. Constructing it on the blocking thread
+    // keeps it clear of the async runtime.
+    let worker = Arc::clone(&manager);
+    let json = tauri::async_runtime::spawn_blocking(move || -> Result<String, String> {
+        let client = worker.client().map_err(err)?;
+        let outcome = client.test_connection(&sample);
+        serde_json::to_string(&outcome).map_err(err)
+    })
+    .await
+    .map_err(|e| format!("the network worker thread failed: {e}"))??;
 
-    let json = serde_json::to_string(&result.map_err(err)?).map_err(err)?;
     manager.remember_operation(json.clone());
     Ok(json)
 }
@@ -781,25 +792,24 @@ pub async fn voice_api_test_connection(
 #[tauri::command]
 #[specta::specta]
 pub async fn voice_api_upload(manager: State<'_, Arc<VoiceApiManager>>) -> Result<String, String> {
-    manager.begin_network_operation().map_err(err)?;
+    // Released when `_permit` drops, including on the `?`s below.
+    let _permit = manager.begin_network_operation().map_err(err)?;
 
     let transcript = manager
         .with_session(|session| session.transcript().clone())
         .map_err(err)?;
-    let client = match manager.client() {
-        Ok(client) => client,
-        Err(e) => {
-            manager.end_network_operation();
-            return Err(err(e));
-        }
-    };
 
-    let outcome = tauri::async_runtime::spawn_blocking(move || client.upload(&transcript))
-        .await
-        .map_err(err);
-    manager.end_network_operation();
+    // See the note in `voice_api_test_connection`: the blocking client must be
+    // constructed on the worker thread, not on the async runtime.
+    let worker = Arc::clone(&manager);
+    let json = tauri::async_runtime::spawn_blocking(move || -> Result<String, String> {
+        let client = worker.client().map_err(err)?;
+        let outcome = client.upload(&transcript).map_err(err)?;
+        serde_json::to_string(&outcome).map_err(err)
+    })
+    .await
+    .map_err(|e| format!("the network worker thread failed: {e}"))??;
 
-    let json = serde_json::to_string(&outcome.map_err(err)?.map_err(err)?).map_err(err)?;
     manager.remember_operation(json.clone());
     Ok(json)
 }
@@ -824,6 +834,21 @@ pub fn voice_api_last_operation(
         .lock()
         .map(|guard| guard.clone())
         .map_err(|_| "operation status lock poisoned".to_string())
+}
+
+/// RAII permit for the single-flight network guard.
+///
+/// Holds its own handle on the flag rather than borrowing the manager, so it can
+/// be held across an `await` in an async command without lifetime trouble.
+#[derive(Debug)]
+pub struct NetworkOperation {
+    flag: Arc<std::sync::atomic::AtomicBool>,
+}
+
+impl Drop for NetworkOperation {
+    fn drop(&mut self) {
+        self.flag.store(false, Ordering::Release);
+    }
 }
 
 /// What the GUI is about to upload, without sending anything.
@@ -991,14 +1016,36 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let m = manager_in(dir.path());
 
-        m.begin_network_operation().expect("first should be admitted");
+        let permit = m.begin_network_operation().expect("first should be admitted");
         let second = m.begin_network_operation();
         assert!(second.is_err(), "a concurrent operation must be refused");
         assert!(second.unwrap_err().to_string().contains("already running"));
 
-        m.end_network_operation();
+        drop(permit);
         m.begin_network_operation()
-            .expect("the permit must be released");
+            .expect("dropping the guard must release the permit");
+    }
+
+    #[test]
+    fn the_permit_is_released_even_when_the_operation_returns_early() {
+        // Regression: the permit used to be released by an explicit call on each
+        // exit path, and an early `?` skipped it. The permit then stayed held for
+        // the life of the process, permanently disabling upload and connection
+        // tests. Dropping the guard must release it on an error path too.
+        let dir = tempfile::tempdir().unwrap();
+        let m = manager_in(dir.path());
+
+        fn operation_that_fails_early(m: &VoiceApiManager) -> Result<(), VoiceApiError> {
+            let _permit = m.begin_network_operation()?;
+            // Stands in for the session lookup that failed in the real bug.
+            Err(VoiceApiError::Config("no session".into()))
+        }
+
+        assert!(operation_that_fails_early(&m).is_err());
+        assert!(
+            m.begin_network_operation().is_ok(),
+            "the permit must be free after an early error return"
+        );
     }
 
     #[test]
