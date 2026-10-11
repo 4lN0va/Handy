@@ -25,7 +25,7 @@
 #         <outdir>/corpus.json (name -> ground-truth text, copied from source)
 
 param(
-    [string]$OutDir = 'C:\Users\Nova\Project Brief\_phase3_corpus',
+    [string]$OutDir = 'C:\Users\<you>\Project Brief\_phase3_corpus',
     [string]$CorpusJson = (Join-Path $PSScriptRoot 'tts_corpus.json')
 )
 

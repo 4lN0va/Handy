@@ -17,7 +17,7 @@ Verified at the start of this phase rather than carried over from Phase 1.
 
 | Item | Value |
 |---|---|
-| Working directory | `C:\Users\Nova\Project Brief\handy-fork` |
+| Working directory | `C:\Users\<you>\Project Brief\handy-fork` |
 | Branch | `feature/voice-api-mvp` |
 | HEAD at phase start | `bca7654` (`chore(tools): stop tracking the local crates.io audit cache`) |
 | Upstream baseline tag | `upstream-baseline-v0.9.8` → `14f6f0d3` (Handy v0.9.8) |

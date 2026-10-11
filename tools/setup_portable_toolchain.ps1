@@ -1,8 +1,8 @@
-# Downloads portable, non-admin toolchains into C:\Users\Nova\toolchain
+# Downloads portable, non-admin toolchains into C:\Users\<you>\toolchain
 # Every item here is per-user and requires no elevation.
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$root = 'C:\Users\Nova\toolchain'
+$root = 'C:\Users\<you>\toolchain'
 $dl = Join-Path $root '_dl'
 New-Item -ItemType Directory -Force -Path $root, $dl | Out-Null
 

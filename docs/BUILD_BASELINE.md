@@ -163,15 +163,15 @@ exception-handling routines folded in, and no separate `libgcc_eh.a`, which Rust
 
 ```powershell
 . .\tools\msvc_env.ps1                       # imports vcvars64 + VSLANG + /utf-8
-$env:PATH = 'C:\Users\Nova\toolchain\ninja;C:\Users\Nova\toolchain\bun\bun-windows-x64;' + $env:PATH
+$env:PATH = 'C:\Users\<you>\toolchain\ninja;C:\Users\<you>\toolchain\bun\bun-windows-x64;' + $env:PATH
 $env:CMAKE_GENERATOR = 'Ninja'
-$env:CMAKE_MAKE_PROGRAM = 'C:\Users\Nova\toolchain\ninja\ninja.exe'
-$env:CARGO_TARGET_DIR = 'C:\Users\Nova\t'
+$env:CMAKE_MAKE_PROGRAM = 'C:\Users\<you>\toolchain\ninja\ninja.exe'
+$env:CARGO_TARGET_DIR = 'C:\Users\<you>\t'
 cd handy-fork
 bun install
 bun run build                                # produces dist/, embedded by tauri-build
 cargo build --manifest-path src-tauri/Cargo.toml
-C:\Users\Nova\t\debug\handy.exe --debug
+C:\Users\<you>\t\debug\handy.exe --debug
 ```
 
 A short `CARGO_TARGET_DIR` is recommended by upstream `BUILD.md` to stay clear of
@@ -233,8 +233,8 @@ verified. It does not build the application.
 
 ## 10. Environment deviations worth knowing
 
-* The checkout path contains a space (`C:\Users\Nova\Project Brief`). Build
-  artefacts are written outside the repository to `C:\Users\Nova\t`.
+* The checkout path contains a space (`C:\Users\<you>\Project Brief`). Build
+  artefacts are written outside the repository to `C:\Users\<you>\t`.
 * The Vulkan SDK's installer sets `VULKAN_SDK` at **machine** scope, so an
   already-running shell will not see it. `tools/msvc_env.ps1` recovers it
   explicitly rather than silently building without a GPU backend.

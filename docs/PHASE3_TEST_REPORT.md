@@ -357,7 +357,7 @@ pane.
 ## 12. JSON export — PASS
 
 Exported from the running app via the registered command:
-`C:\Users\Nova\Project Brief\_phase3_export\transcript.json`
+`C:\Users\<you>\Project Brief\_phase3_export\transcript.json`
 
 | Check | Result |
 |---|---|

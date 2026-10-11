@@ -51,3 +51,8 @@ tools/.license_cache.json
 
 # Build output for the standalone voice-API crate (built without CARGO_TARGET_DIR).
 crates/handy-voice-api/target/
+
+# Internal ops note for whoever pushes. Contains a second personal GitHub
+# account name, the WSL layout and local absolute paths. Kept on disk, never
+# published.
+docs/PUBLISH_HANDOFF.md

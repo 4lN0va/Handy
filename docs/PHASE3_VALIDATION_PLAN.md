@@ -18,7 +18,7 @@ Verified before any change, because Phase 2's report is history, not evidence.
 
 | Item | Observed |
 |---|---|
-| Working directory | `C:\Users\Nova\Project Brief\handy-fork` |
+| Working directory | `C:\Users\<you>\Project Brief\handy-fork` |
 | Branch | `feature/voice-api-mvp` |
 | HEAD | `20f92ed` — *feat(voice-api): wire live recognition into the transcript and build the app* |
 | Working tree | **clean** — no uncommitted changes, no untracked files |
