@@ -32,7 +32,7 @@ cd "/mnt/c/Users/Nova/Project Brief/handy-fork"
 git rev-parse --show-toplevel          # .../handy-fork
 git rev-parse --abbrev-ref HEAD        # feature/voice-api-mvp
 git remote get-url origin              # https://github.com/4lN0va/Handy.git
-git rev-list --count upstream/main..HEAD   # 16
+git rev-list --count upstream/main..HEAD   # non-zero
 git status --porcelain                 # no output
 ```
 
