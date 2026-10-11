@@ -97,6 +97,11 @@ pub struct VoiceApiManager {
     config_path: PathBuf,
     /// Monotonic counter used to build unique session ids.
     session_counter: AtomicU64,
+    /// Optional forwarder to the local integration-verification tool.
+    ///
+    /// Holds the bridge rather than owning it, so a run without a bridge costs
+    /// one uncontended lock on the transcript path and nothing else.
+    bridge: Mutex<Option<Arc<crate::bridge::Bridge>>>,
 }
 
 impl VoiceApiManager {
@@ -124,6 +129,7 @@ impl VoiceApiManager {
             secret_store,
             config_path,
             session_counter: AtomicU64::new(0),
+            bridge: Mutex::new(None),
         }
     }
 
@@ -323,18 +329,87 @@ impl VoiceApiManager {
     }
 
     /// Apply adapter output to the session. Returns whether anything changed.
+    ///
+    /// Every applied update is also offered to the integration bridge, so the
+    /// verification tool sees the same per-segment stream the UI does. That is
+    /// the single place transcript updates are produced, so there is no second
+    /// event pipeline to keep in sync.
     fn apply_events(&self, events: Vec<TranscriptUpdate>) -> bool {
-        match self.session.lock() {
-            Ok(mut guard) => match guard.as_mut() {
-                Some(session) => {
-                    for update in events {
-                        session.apply(update);
+        let session_id = {
+            match self.session.lock() {
+                Ok(mut guard) => match guard.as_mut() {
+                    Some(session) => {
+                        let id = session.transcript().session_id.clone();
+                        for update in &events {
+                            session.apply(update.clone());
+                        }
+                        Some(id)
                     }
-                    true
-                }
-                None => false,
-            },
-            Err(_) => false,
+                    None => None,
+                },
+                Err(_) => None,
+            }
+        };
+        let Some(session_id) = session_id else {
+            return false;
+        };
+
+        // Forwarded after the session lock is released, so a slow bridge can
+        // never hold up the transcript model.
+        for update in &events {
+            self.forward_to_bridge(&session_id, update);
+        }
+        true
+    }
+
+    /// Publish one applied update to the integration bridge, if one is attached.
+    fn forward_to_bridge(&self, session_id: &str, update: &TranscriptUpdate) {
+        let bridge = match self.bridge.lock() {
+            Ok(guard) => guard.clone(),
+            Err(_) => None,
+        };
+        let Some(bridge) = bridge else {
+            return;
+        };
+        bridge.send_transcript(crate::bridge::TranscriptEvent {
+            session_id: session_id.to_string(),
+            segment_id: update.segment_id.clone(),
+            text: update.text.clone(),
+            final_: update.kind == SegmentKind::Final,
+            timestamp: crate::bridge::now_rfc3339(),
+            source: "handy".to_string(),
+        });
+    }
+
+    /// Attach (or detach) the integration bridge.
+    ///
+    /// Held as a weak-ish optional reference: the manager never owns the bridge,
+    /// it only forwards to it, so a bridge that is not installed costs nothing.
+    pub fn set_bridge(&self, bridge: Option<Arc<crate::bridge::Bridge>>) {
+        if let Ok(mut guard) = self.bridge.lock() {
+            *guard = bridge;
+        }
+    }
+
+    /// Accept a finalized segment produced outside the streaming path.
+    ///
+    /// Used by automatic continuous transcription, which produces whole
+    /// sentences from batch recognition rather than incremental updates. It goes
+    /// through the same adapter and session as everything else, so segment
+    /// identity, revision and the GUI event are identical to the manual flow.
+    pub fn accept_final_segment(&self, app: &AppHandle, text: &str) -> bool {
+        if self.ingest_final_text(text) {
+            self.publish_transcript(app, true);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Record a recognition failure against the active session.
+    pub fn record_recognition_error(&self, app: &AppHandle, message: &str) {
+        if self.ingest_error(message) {
+            self.publish_transcript(app, true);
         }
     }
 

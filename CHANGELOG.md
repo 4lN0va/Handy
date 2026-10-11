@@ -10,6 +10,56 @@ currently publish versioned releases of its own.
 
 ## [Unreleased]
 
+### Phase 4 — automatic continuous transcription + verification-tool bridge
+
+#### Added
+
+- **Automatic continuous transcription.** Start once and keep speaking; the
+  transcript is cut into segments at the speaker's natural pauses instead of one
+  keypress per sentence. A segment closes when the audio level has stayed below
+  the noise floor for `pause_ms` (default 800 ms) after speech was heard, with a
+  `max_segment_ms` cap for a speaker who never pauses.
+  - Reuses the level buckets the on-screen meter already produces
+    (`managers/speech_activity.rs` observes them passively) and the ordinary
+    record -> stop -> transcribe path. No parallel audio pipeline, and the
+    recorder's VAD is untouched.
+  - The next recording starts *before* transcription runs, so audio captured
+    during transcription lands in the next segment instead of being dropped.
+  - Manual recording, the keyboard shortcut, ASR and clipboard behaviour are
+    unchanged; continuous mode uses its own binding id.
+- **Integration bridge** to `handy-integration-verification-tool`:
+  `POST /api/handy/heartbeat` on a timer and `POST /api/transcripts` per segment,
+  using the tool's own field shapes. Disabled by default; loopback or https only;
+  clear-text HTTP to a remote host is refused.
+  - Fed from `VoiceApiManager::apply_events`, the single place transcript updates
+    are produced, so there is no second event pipeline.
+  - One dedicated worker thread, unbounded queue, 2 s timeout, bounded retries,
+    4xx not retried. The `reqwest::blocking` client is built on that thread.
+  - Counters and the last error are exposed via `bridge_status` and shown in the
+    UI. Nothing is reported as sent when it was not.
+- Nine Tauri commands: `continuous_start/stop/state/get_settings/set_settings`,
+  `bridge_get_config/set_config/status/heartbeat_now`.
+- A control panel on the Transcript settings page.
+
+#### Fixed
+
+- **Heartbeats were rejected with HTTP 422.** The bridge sent `"status": ""` when
+  no activity had been set; the tool requires a provided status to be non-empty.
+  Every heartbeat failed while transcript events succeeded, which reads like a
+  transport problem rather than a contract error. An empty status is now omitted,
+  with a regression test. Found by the end-to-end run against the real tool, not
+  by unit tests.
+
+#### Verified
+
+- Application crate: **323 passed, 0 failed, 16 ignored** (27 new tests).
+- Heartbeat received by the tool: `heartbeatsReceived: 11`, `failed: 0`,
+  `app_version 0.9.8`, `status idle`.
+- Transcript events received with the correct schema and Traditional Chinese
+  intact; partial and final share one `segment_id`; every
+  (session, segment, final) appears exactly once.
+- The microphone was **not** exercised in this session: segmentation timing is
+  reasoned, not measured. See `docs/PHASE4_CONTINUOUS_INTEGRATION.md`.
 ### Phase 3 — real-world validation and hardening
 
 Operating the application found six defects, five of which unit tests could not

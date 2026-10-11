@@ -1146,6 +1146,78 @@ async voiceApiUploadPreview() : Promise<Result<string, string>> {
 }
 },
 /**
+ * Start a continuous session. Refused if one is already running.
+ */
+async continuousStart() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("continuous_start") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stop the session, transcribing whatever has already been captured.
+ */
+async continuousStop() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("continuous_stop") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Current session state. Cheap enough to poll.
+ */
+async continuousState() : Promise<string> {
+    return await TAURI_INVOKE("continuous_state");
+},
+async continuousGetSettings() : Promise<string> {
+    return await TAURI_INVOKE("continuous_get_settings");
+},
+/**
+ * Replace the pause-detection settings. Values are clamped to sane ranges.
+ */
+async continuousSetSettings(settingsJson: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("continuous_set_settings", { settingsJson }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async bridgeGetConfig() : Promise<string> {
+    return await TAURI_INVOKE("bridge_get_config");
+},
+/**
+ * Replace the bridge configuration and persist it.
+ * 
+ * Validation refuses to send transcripts in clear text to a non-loopback host,
+ * so a typo in the endpoint surfaces here rather than silently exposing speech.
+ */
+async bridgeSetConfig(configJson: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("bridge_set_config", { configJson }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Counters and the last error, so the UI can show whether events are actually
+ * being delivered instead of assuming they are.
+ */
+async bridgeStatus() : Promise<string> {
+    return await TAURI_INVOKE("bridge_status");
+},
+/**
+ * Send a heartbeat now, rather than waiting for the next interval.
+ */
+async bridgeHeartbeatNow() : Promise<void> {
+    await TAURI_INVOKE("bridge_heartbeat_now");
+},
+/**
  * Stub implementation for non-macOS platforms
  * Always returns false since laptop detection is macOS-specific
  */

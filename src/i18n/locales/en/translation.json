@@ -756,7 +756,31 @@
     "uploading": "Uploading…",
     "uploadManualNote": "Manual only — this fork never uploads automatically.",
     "uploaded": "Uploaded (HTTP {{status}}, {{attempts}} attempt(s)).",
-    "uploadSkipped": "Nothing was uploaded."
+    "uploadSkipped": "Nothing was uploaded.",
+    "continuous": {
+      "title": "Automatic continuous transcription",
+      "description": "Start once and keep speaking. Handy closes each segment at your natural pauses and starts the next one by itself. Manual recording and the keyboard shortcut are unchanged.",
+      "start": "Start continuous",
+      "stop": "Stop continuous",
+      "running": "Recording continuously",
+      "idle": "Idle",
+      "elapsed": "Elapsed",
+      "segments": "Segments",
+      "transcribing": "Transcribing",
+      "startedNotice": "Continuous transcription started.",
+      "stoppedNotice": "Continuous transcription stopped.",
+      "pauseMs": "Pause to end a segment (ms)",
+      "maxSegmentMs": "Maximum segment length (ms)",
+      "bridgeTitle": "Integration bridge",
+      "bridgeDescription": "Sends heartbeat and transcript events to the local verification tool. Off unless you turn it on. Loopback or https only.",
+      "bridgeOn": "Enabled",
+      "bridgeOff": "Disabled",
+      "bridgeSaved": "Endpoint saved.",
+      "save": "Save",
+      "sent": "Events sent",
+      "heartbeats": "Heartbeats",
+      "failed": "Failed"
+    }
   },
   "voiceApi": {
     "endpointTitle": "Endpoint",

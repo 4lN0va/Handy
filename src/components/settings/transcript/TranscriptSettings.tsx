@@ -9,6 +9,7 @@ import { SettingContainer } from "../../ui/SettingContainer";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { Textarea } from "../../ui/Textarea";
 import { ToggleSwitch } from "../../ui/ToggleSwitch";
+import { ContinuousPanel } from "./ContinuousPanel";
 
 /**
  * Mirrors `Transcript` in `crates/handy-voice-api`. Carried to the GUI as JSON
@@ -190,6 +191,15 @@ export const TranscriptSettings: React.FC = () => {
 
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
+      <SettingsGroup
+        title={t("transcript.continuous.title")}
+        description={t("transcript.continuous.description")}
+      >
+        <div className="px-4 py-3">
+          <ContinuousPanel />
+        </div>
+      </SettingsGroup>
+
       <SettingsGroup
         title={t("transcript.title")}
         description={t("transcript.description")}

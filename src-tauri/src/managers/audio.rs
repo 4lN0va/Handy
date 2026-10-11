@@ -7,6 +7,7 @@ use crate::audio_toolkit::{
     AudioRecorder, SileroVad, VadPolicy, VoiceActivityDetector,
 };
 use crate::helpers::clamshell;
+use crate::managers::speech_activity::SpeechActivity;
 use crate::managers::transcription::StreamRouter;
 use crate::settings::{get_settings, write_settings, AppSettings, VadBackend};
 use crate::utils;
@@ -282,6 +283,7 @@ fn create_audio_recorder(
     app_handle: &tauri::AppHandle,
     selected_channel: Option<u16>,
     stream_router: Arc<StreamRouter>,
+    speech_activity: Arc<SpeechActivity>,
 ) -> Result<AudioRecorder, anyhow::Error> {
     let detector: Box<dyn VoiceActivityDetector> = match backend {
         VadBackend::Silero => {
@@ -337,7 +339,12 @@ fn create_audio_recorder(
         .with_selected_channel(selected_channel)
         .with_level_callback({
             let app_handle = app_handle.clone();
+            // Same buckets the meter already uses; observing them is how
+            // continuous mode finds sentence boundaries without touching the
+            // VAD or the audio path.
+            let activity = Arc::clone(&speech_activity);
             move |levels| {
+                activity.note_levels(&levels, crate::managers::speech_activity::monotonic_ms());
                 utils::emit_levels(&app_handle, &levels);
             }
         })
@@ -402,6 +409,11 @@ pub struct AudioRecordingManager {
     /// so the retry re-enumerates. The system-default case is never cached —
     /// the recorder resolves the current default itself, cheaply.
     cached_device: Arc<Mutex<Option<(String, cpal::Device)>>>,
+    /// Passive speech-activity observation for automatic continuous
+    /// transcription. Updated from the level callback with data the audio path
+    /// already computes for the on-screen meter, so it cannot affect what is
+    /// recorded. See `managers::speech_activity`.
+    speech_activity: Arc<SpeechActivity>,
 }
 
 impl AudioRecordingManager {
@@ -433,6 +445,7 @@ impl AudioRecordingManager {
             recording_active: Arc::new(AtomicBool::new(false)),
             capture_generation: Arc::new(AtomicU64::new(0)),
             cached_device: Arc::new(Mutex::new(None)),
+            speech_activity: Arc::new(SpeechActivity::default()),
         };
 
         // Always-on?  Open immediately.
@@ -629,6 +642,7 @@ impl AudioRecordingManager {
                 &self.app_handle,
                 settings.selected_channel,
                 Arc::clone(&self.stream_router),
+            Arc::clone(&self.speech_activity),
             )?);
         }
         Ok(())
@@ -879,6 +893,7 @@ impl AudioRecordingManager {
             &self.app_handle,
             settings.selected_channel,
             Arc::clone(&self.stream_router),
+            Arc::clone(&self.speech_activity),
         )?;
         let was_open = *self.is_open.lock().unwrap();
 
@@ -1067,6 +1082,14 @@ impl AudioRecordingManager {
     }
 
     /// Cancel any ongoing recording without returning audio samples
+    /// Speech-activity observation, for automatic continuous transcription.
+    ///
+    /// Always present, so callers do not have to handle a missing observer; it
+    /// simply reports "no voice seen" until a recording produces levels.
+    pub fn speech_activity(&self) -> Option<Arc<SpeechActivity>> {
+        Some(Arc::clone(&self.speech_activity))
+    }
+
     pub fn cancel_recording(&self) {
         self.invalidate_recording_readiness();
         self.cancel_generation.fetch_add(1, Ordering::AcqRel);
