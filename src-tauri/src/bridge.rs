@@ -682,11 +682,14 @@ mod tests {
     }
 
     #[test]
-    fn the_default_configuration_is_disabled_and_loopback() {
+    fn the_default_configuration_only_ever_targets_loopback() {
+        // The default is enabled, so the safety property is not "off" but
+        // "loopback": transcripts may never leave the machine for a remote host
+        // without an explicit change.
         let c = BridgeConfig::default();
-        assert!(!c.enabled, "the bridge must never be on by default");
         assert_eq!(c.endpoint, DEFAULT_ENDPOINT);
         assert!(c.endpoint.starts_with("http://127.0.0.1"));
+        assert!(c.validate().is_ok());
     }
 
     #[test]
@@ -727,6 +730,9 @@ mod tests {
     fn a_disabled_bridge_queues_nothing() {
         let dir = tempfile::tempdir().unwrap();
         let bridge = Bridge::new(dir.path().join(CONFIG_FILE), "0.0.0-test".into());
+        let mut off = BridgeConfig::default();
+        off.enabled = false;
+        bridge.set_config(off).unwrap();
         assert!(!bridge.send_transcript(TranscriptEvent {
             session_id: "s".into(),
             segment_id: "1".into(),
@@ -766,6 +772,9 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let bridge = Bridge::new(dir.path().join(CONFIG_FILE), "0.0.0-test".into());
         bridge.set_config(loopback()).unwrap();
+        let mut no_partials = loopback();
+        no_partials.send_partials = false;
+        bridge.set_config(no_partials).unwrap();
 
         let partial = TranscriptEvent {
             session_id: "s1".into(),
@@ -813,7 +822,6 @@ mod tests {
         bad.endpoint = "http://10.0.0.9:8765".into();
         assert!(bridge.set_config(bad).is_err());
         assert!(!path.exists(), "a rejected config must not be written");
-        assert!(!bridge.config().enabled);
     }
 
     #[test]
@@ -822,8 +830,11 @@ mod tests {
         let path = dir.path().join(CONFIG_FILE);
         std::fs::write(&path, "{ not json").unwrap();
         let config = load_config(&path);
-        assert!(!config.enabled);
         assert_eq!(config.endpoint, DEFAULT_ENDPOINT);
+        assert!(
+            config.validate().is_ok(),
+            "a fallback must not point somewhere unsafe"
+        );
     }
 
     #[test]

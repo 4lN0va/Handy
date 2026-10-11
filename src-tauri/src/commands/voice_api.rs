@@ -1,3 +1,21 @@
+//! Voice API: the transcript model, JSON export, and the integration bridge.
+//!
+//! # Retained but unreachable
+//!
+//! The custom-backend **upload** feature was removed: its settings page, its
+//! sidebar entry, its upload UI and all twelve of its commands are gone. What
+//! remains here is the transport plumbing that only those commands used -
+//! `ApiConfig`, the credential store, the single-flight guard and the retry
+//! client.
+//!
+//! It is deliberately left in place for one commit rather than deleted in the
+//! same change as the UI, because deleting it also removes the config and
+//! secret tests and rewrites the manager constructor. That is a refactor worth
+//! reviewing on its own, and doing it here would have mixed an unreviewed
+//! refactor into a bug-fix commit. The `allow` below exists so the pending
+//! deletion does not leave a permanent wall of warnings; it should be removed
+//! together with the code it covers.
+#![allow(dead_code)]
 //! Tauri commands exposing the voice-API layer to the GUI.
 //!
 //! # Where this sits

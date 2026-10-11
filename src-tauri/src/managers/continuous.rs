@@ -630,7 +630,11 @@ mod tests {
         assert_eq!(s.pause_ms, 800);
         assert!(s.min_segment_ms < s.pause_ms);
         assert!(s.max_segment_ms > s.pause_ms);
-        assert!(s.silence_level > 0.0 && s.silence_level < 0.1);
+        // Roughly -57 dB on the visualizer curve. The old < 0.1 bound encoded a
+        // threshold so low that ordinary room tone cleared it, which disabled
+        // pause detection entirely.
+        assert!(s.silence_level > 0.3 && s.silence_level < 0.6);
+        assert!(s.enabled, "continuous mode is armed by default");
     }
 
     #[test]
