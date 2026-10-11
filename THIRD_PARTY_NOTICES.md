@@ -10,20 +10,20 @@ the notices of every dependency below, must be retained in redistributions.
 
 ## Scope and limitations
 
-- Covers the **Rust** dependency graph as resolved in `Cargo.lock`.
-- **Does not** cover the JavaScript/frontend dependency tree, fonts, or icons.
-- **Does not** cover speech **models**, which are downloaded separately and are
+* Covers the **Rust** dependency graph as resolved in `Cargo.lock`.
+* **Does not** cover the JavaScript/frontend dependency tree, fonts, or icons.
+* **Does not** cover speech **models**, which are downloaded separately and are
   documented in `MODEL_LICENSES.md`.
-- Records _declared_ licence identifiers. It is not a legal opinion, and it does
+* Records *declared* licence identifiers. It is not a legal opinion, and it does
   not verify that each obligation has been met.
 
 ## Summary
 
-- Registry packages audited: **845**
-- Git/path dependencies (not on crates.io): **9**
-- Distinct licence expressions: **39**
-- Packages with no declared licence: **0**
-- Unresolved during audit: **0**
+* Registry packages audited: **845**
+* Git/path dependencies (not on crates.io): **9**
+* Distinct licence expressions: **39**
+* Packages with no declared licence: **0**
+* Unresolved during audit: **0**
 
 ## Git and path dependencies
 
@@ -31,17 +31,17 @@ These are not published on crates.io. They are pinned by commit in
 `Cargo.lock`, and **must be vendored before release**, because a deleted or
 force-pushed upstream branch would make the project unbuildable.
 
-| Package           | Version | Source                                                                                     |
-| ----------------- | ------- | ------------------------------------------------------------------------------------------ |
-| `handy`           | 0.9.8   | `(local path)`                                                                             |
-| `handy-voice-api` | 0.1.0   | `(local path)`                                                                             |
-| `hf-hub`          | 0.5.0   | `git+https://github.com/cjpais/hf-hub?branch=cancellable-downloads#9918f11ab3473135eb786…` |
-| `rdev`            | 0.5.0-2 | `git+https://github.com/rustdesk-org/rdev#a90dbe1172f8832f54c97c62e823c5a34af5fdfe`        |
-| `rodio`           | 0.20.1  | `git+https://github.com/cjpais/rodio.git#fed30292db417cb95305c118c0e1d804fb74cbff`         |
-| `tao`             | 0.35.3  | `git+https://github.com/cjpais/tao?rev=c3bee28c1d446d95f08c95c3b6f8d4bde052b876#c3bee28c…` |
-| `tao-macros`      | 0.1.3   | `git+https://github.com/cjpais/tao?rev=c3bee28c1d446d95f08c95c3b6f8d4bde052b876#c3bee28c…` |
-| `tauri-nspanel`   | 2.1.0   | `git+https://github.com/ahkohd/tauri-nspanel?branch=v2.1#da9c9a8d4eb7f0524a2508988df1a7d…` |
-| `vad-rs`          | 0.1.6   | `git+https://github.com/cjpais/vad-rs#2a412ed858695b9251f3f5a1a20d95b59fa7c498`            |
+| Package | Version | Source |
+|---|---|---|
+| `handy` | 0.9.8 | `(local path)` |
+| `handy-voice-api` | 0.1.0 | `(local path)` |
+| `hf-hub` | 0.5.0 | `git+https://github.com/cjpais/hf-hub?branch=cancellable-downloads#9918f11ab3473135eb786…` |
+| `rdev` | 0.5.0-2 | `git+https://github.com/rustdesk-org/rdev#a90dbe1172f8832f54c97c62e823c5a34af5fdfe` |
+| `rodio` | 0.20.1 | `git+https://github.com/cjpais/rodio.git#fed30292db417cb95305c118c0e1d804fb74cbff` |
+| `tao` | 0.35.3 | `git+https://github.com/cjpais/tao?rev=c3bee28c1d446d95f08c95c3b6f8d4bde052b876#c3bee28c…` |
+| `tao-macros` | 0.1.3 | `git+https://github.com/cjpais/tao?rev=c3bee28c1d446d95f08c95c3b6f8d4bde052b876#c3bee28c…` |
+| `tauri-nspanel` | 2.1.0 | `git+https://github.com/ahkohd/tauri-nspanel?branch=v2.1#da9c9a8d4eb7f0524a2508988df1a7d…` |
+| `vad-rs` | 0.1.6 | `git+https://github.com/cjpais/vad-rs#2a412ed858695b9251f3f5a1a20d95b59fa7c498` |
 
 ## Licence expressions needing attention
 
@@ -50,56 +50,56 @@ compatibility. Where an expression is disjunctive (contains `OR`), selecting a
 permissive branch avoids the stricter obligation — that choice must be made
 deliberately and recorded.
 
-| Package                   | Version | License                                  | Permissive option available? |
-| ------------------------- | ------- | ---------------------------------------- | ---------------------------- |
-| `aho-corasick`            | 1.1.4   | `Unlicense OR MIT`                       | yes                          |
-| `byteorder`               | 1.5.0   | `Unlicense OR MIT`                       | yes                          |
-| `byteorder-lite`          | 0.1.0   | `Unlicense OR MIT`                       | yes                          |
-| `cbindgen`                | 0.29.2  | `MPL-2.0`                                | **no**                       |
-| `clipboard-win`           | 5.4.1   | `BSL-1.0`                                | **no**                       |
-| `cssparser`               | 0.29.6  | `MPL-2.0`                                | **no**                       |
-| `cssparser`               | 0.36.0  | `MPL-2.0`                                | **no**                       |
-| `cssparser-macros`        | 0.6.1   | `MPL-2.0`                                | **no**                       |
-| `dtoa-short`              | 0.3.5   | `MPL-2.0`                                | **no**                       |
-| `dunce`                   | 1.0.5   | `CC0-1.0 OR MIT-0 OR Apache-2.0`         | yes                          |
-| `epoll`                   | 4.4.0   | `MPL-2.0`                                | **no**                       |
-| `error-code`              | 3.3.2   | `BSL-1.0`                                | **no**                       |
-| `fst`                     | 0.4.7   | `Unlicense/MIT`                          | yes                          |
-| `memchr`                  | 2.8.0   | `Unlicense OR MIT`                       | yes                          |
-| `option-ext`              | 0.2.0   | `MPL-2.0`                                | **no**                       |
-| `r-efi`                   | 5.3.0   | `MIT OR Apache-2.0 OR LGPL-2.1-or-later` | yes                          |
-| `ryu`                     | 1.0.23  | `Apache-2.0 OR BSL-1.0`                  | yes                          |
-| `same-file`               | 1.0.6   | `Unlicense/MIT`                          | yes                          |
-| `selectors`               | 0.24.0  | `MPL-2.0`                                | **no**                       |
-| `selectors`               | 0.36.1  | `MPL-2.0`                                | **no**                       |
-| `symphonia`               | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-bundle-flac`   | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-bundle-mp3`    | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-codec-aac`     | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-codec-pcm`     | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-codec-vorbis`  | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-core`          | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-format-isomp4` | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-format-ogg`    | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-format-riff`   | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-metadata`      | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `symphonia-utils-xiph`    | 0.5.5   | `MPL-2.0`                                | **no**                       |
-| `termcolor`               | 1.4.1   | `Unlicense OR MIT`                       | yes                          |
-| `walkdir`                 | 2.5.0   | `Unlicense/MIT`                          | yes                          |
-| `webpki-root-certs`       | 1.0.6   | `CDLA-Permissive-2.0`                    | **no**                       |
-| `webpki-roots`            | 1.0.8   | `CDLA-Permissive-2.0`                    | **no**                       |
-| `winapi-util`             | 0.1.11  | `Unlicense OR MIT`                       | yes                          |
+| Package | Version | License | Permissive option available? |
+|---|---|---|---|
+| `aho-corasick` | 1.1.4 | `Unlicense OR MIT` | yes |
+| `byteorder` | 1.5.0 | `Unlicense OR MIT` | yes |
+| `byteorder-lite` | 0.1.0 | `Unlicense OR MIT` | yes |
+| `cbindgen` | 0.29.2 | `MPL-2.0` | **no** |
+| `clipboard-win` | 5.4.1 | `BSL-1.0` | **no** |
+| `cssparser` | 0.29.6 | `MPL-2.0` | **no** |
+| `cssparser` | 0.36.0 | `MPL-2.0` | **no** |
+| `cssparser-macros` | 0.6.1 | `MPL-2.0` | **no** |
+| `dtoa-short` | 0.3.5 | `MPL-2.0` | **no** |
+| `dunce` | 1.0.5 | `CC0-1.0 OR MIT-0 OR Apache-2.0` | yes |
+| `epoll` | 4.4.0 | `MPL-2.0` | **no** |
+| `error-code` | 3.3.2 | `BSL-1.0` | **no** |
+| `fst` | 0.4.7 | `Unlicense/MIT` | yes |
+| `memchr` | 2.8.0 | `Unlicense OR MIT` | yes |
+| `option-ext` | 0.2.0 | `MPL-2.0` | **no** |
+| `r-efi` | 5.3.0 | `MIT OR Apache-2.0 OR LGPL-2.1-or-later` | yes |
+| `ryu` | 1.0.23 | `Apache-2.0 OR BSL-1.0` | yes |
+| `same-file` | 1.0.6 | `Unlicense/MIT` | yes |
+| `selectors` | 0.24.0 | `MPL-2.0` | **no** |
+| `selectors` | 0.36.1 | `MPL-2.0` | **no** |
+| `symphonia` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-bundle-flac` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-bundle-mp3` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-codec-aac` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-codec-pcm` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-codec-vorbis` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-core` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-format-isomp4` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-format-ogg` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-format-riff` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-metadata` | 0.5.5 | `MPL-2.0` | **no** |
+| `symphonia-utils-xiph` | 0.5.5 | `MPL-2.0` | **no** |
+| `termcolor` | 1.4.1 | `Unlicense OR MIT` | yes |
+| `walkdir` | 2.5.0 | `Unlicense/MIT` | yes |
+| `webpki-root-certs` | 1.0.6 | `CDLA-Permissive-2.0` | **no** |
+| `webpki-roots` | 1.0.8 | `CDLA-Permissive-2.0` | **no** |
+| `winapi-util` | 0.1.11 | `Unlicense OR MIT` | yes |
 
 ### Notes on specific families
 
-- **MPL-2.0** (the `symphonia` audio-decoding family, `cssparser`, `selectors`,
-  `cbindgen`, `epoll`, `option-ext`) is _file-level_ copyleft. Using these
+* **MPL-2.0** (the `symphonia` audio-decoding family, `cssparser`, `selectors`,
+  `cbindgen`, `epoll`, `option-ext`) is *file-level* copyleft. Using these
   unmodified alongside proprietary code is fine; a **modified** MPL file must be
   published under the MPL. Do not patch these dependencies.
-- **`r-efi`** offers `MIT OR Apache-2.0 OR LGPL-2.1-or-later`. Select MIT or
+* **`r-efi`** offers `MIT OR Apache-2.0 OR LGPL-2.1-or-later`. Select MIT or
   Apache-2.0 so no LGPL obligation applies.
-- **`Unlicense OR MIT` / `Unlicense/MIT`** packages: either branch is permissive.
-- **BSD-3-Clause / ISC / Zlib / BSL-1.0 / CC0 / CDLA-Permissive-2.0**: permissive;
+* **`Unlicense OR MIT` / `Unlicense/MIT`** packages: either branch is permissive.
+* **BSD-3-Clause / ISC / Zlib / BSL-1.0 / CC0 / CDLA-Permissive-2.0**: permissive;
   retain the notice and licence text.
 
 ## Full inventory by licence
@@ -266,18 +266,18 @@ These are linked or invoked but do not appear as crates. Each needs its own
 notice, and the list is maintained by hand because it cannot be derived from
 `Cargo.lock` (a `-sys` binding crate does not carry the C library's licence).
 
-| Component                    | License                 | Note                                                                                   |
-| ---------------------------- | ----------------------- | -------------------------------------------------------------------------------------- |
-| whisper.cpp / ggml           | MIT                     | via `transcribe-cpp`                                                                   |
-| ONNX Runtime                 | MIT                     | via `ort` / `ort-sys`                                                                  |
-| Silero VAD (model + runtime) | MIT                     | via `vad-rs`; **the `vad-rs` repository ships no LICENSE file** — see LICENSE_AUDIT.md |
-| SQLite                       | Public domain           | bundled via `libsqlite3-sys`                                                           |
-| OpenBLAS                     | BSD-3-Clause            | Linux CPU backend                                                                      |
-| GTK 3 (C library)            | LGPL-2.1-or-later       | Linux; must remain dynamically linked and replaceable                                  |
-| WebKitGTK (C library)        | LGPL-2.1-or-later + BSD | Linux; same requirement                                                                |
-| gtk-layer-shell              | MIT                     | Linux overlay                                                                          |
-| libopus                      | BSD-3-Clause            | only if the `opus` crate is enabled                                                    |
-| Vulkan loader / headers      | Apache-2.0 / MIT        | system component on Windows and Linux                                                  |
+| Component | License | Note |
+|---|---|---|
+| whisper.cpp / ggml | MIT | via `transcribe-cpp` |
+| ONNX Runtime | MIT | via `ort` / `ort-sys` |
+| Silero VAD (model + runtime) | MIT | via `vad-rs`; **the `vad-rs` repository ships no LICENSE file** — see LICENSE_AUDIT.md |
+| SQLite | Public domain | bundled via `libsqlite3-sys` |
+| OpenBLAS | BSD-3-Clause | Linux CPU backend |
+| GTK 3 (C library) | LGPL-2.1-or-later | Linux; must remain dynamically linked and replaceable |
+| WebKitGTK (C library) | LGPL-2.1-or-later + BSD | Linux; same requirement |
+| gtk-layer-shell | MIT | Linux overlay |
+| libopus | BSD-3-Clause | only if the `opus` crate is enabled |
+| Vulkan loader / headers | Apache-2.0 / MIT | system component on Windows and Linux |
 
 > This fork **does not use FFmpeg**, which avoids the GPL/LGPL questions that
 > arise when bundling an FFmpeg build. Audio decoding uses `symphonia` (MPL-2.0).
