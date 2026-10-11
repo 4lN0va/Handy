@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Cog, FlaskConical, History, Info, Sparkles, Cpu, FileJson, Cloud } from "lucide-react";
+import { Cog, FlaskConical, History, Info, Sparkles, Cpu, FileJson } from "lucide-react";
 import HandyTextLogo from "./icons/HandyTextLogo";
 import HandyHand from "./icons/HandyHand";
 import { useSettings } from "../hooks/useSettings";
@@ -12,7 +12,6 @@ import {
   AboutSettings,
   PostProcessingSettings,
   ModelsSettings,
-  VoiceApiSettings,
   TranscriptSettings,
 } from "./settings";
 
@@ -56,12 +55,6 @@ export const SECTIONS_CONFIG = {
     labelKey: "sidebar.transcript",
     icon: FileJson,
     component: TranscriptSettings,
-    enabled: () => true,
-  },
-  voiceapi: {
-    labelKey: "sidebar.voiceApi",
-    icon: Cloud,
-    component: VoiceApiSettings,
     enabled: () => true,
   },
   advanced: {

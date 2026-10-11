@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands } from "@/bindings";
 import { Button } from "../../ui/Button";
+import { ToggleSwitch } from "../../ui/ToggleSwitch";
 
 /**
  * Automatic continuous transcription, and the local verification-tool bridge.
@@ -73,6 +74,7 @@ export const ContinuousPanel: React.FC = () => {
   const { t } = useTranslation();
   const [state, setState] = useState<ContinuousState>(IDLE);
   const [settings, setSettings] = useState<ContinuousSettings | null>(null);
+  const [enabled, setEnabled] = useState(true);
   const [bridge, setBridge] = useState<BridgeConfig | null>(null);
   const [bridgeStatus, setBridgeStatus] = useState<BridgeStatus | null>(null);
   const [endpointDraft, setEndpointDraft] = useState("");
@@ -81,12 +83,14 @@ export const ContinuousPanel: React.FC = () => {
   const [notice, setNotice] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [s, cfg, bs] = await Promise.all([
+    const [s, cfg, bs, en] = await Promise.all([
       commands.continuousState(),
       commands.bridgeGetConfig(),
       commands.bridgeStatus(),
+      commands.continuousEnabled(),
     ]);
     setState(parse<ContinuousState>(s, IDLE));
+    setEnabled(en === "true");
     setBridge((prev) => {
       const next = parse<BridgeConfig>(cfg, prev ?? ({} as BridgeConfig));
       setEndpointDraft((d) => (d === "" ? next.endpoint ?? "" : d));
@@ -108,23 +112,68 @@ export const ContinuousPanel: React.FC = () => {
     })();
   }, []);
 
-  const toggle = async () => {
+  /**
+   * The toggle is the whole control: on starts a continuous session, off stops
+   * it.
+   *
+   * It deliberately does more than set the `enabled` flag. A flag on its own
+   * only arms the feature, and nothing else calls `continuous_start` — the
+   * keyboard shortcut still runs its own single-utterance path — so a
+   * flag-only toggle left the feature unable to start at all. Turning it on
+   * records, turning it off stops.
+   */
+  const toggleEnabled = async () => {
+    const next = !enabled;
     setBusy(true);
     setError(null);
     setNotice(null);
     try {
-      const result = state.running
-        ? await commands.continuousStop()
-        : await commands.continuousStart();
+      if (next) {
+        // Arm first: `continuous_start` refuses when the feature is disabled.
+        const armed = await commands.continuousSetEnabled(true);
+        if (armed.status === "error") {
+          setError(armed.error);
+          return;
+        }
+        const started = await commands.continuousStart();
+        if (started.status === "error") {
+          setError(started.error);
+          setEnabled(false);
+          void commands.continuousSetEnabled(false);
+          return;
+        }
+        setState(parse<ContinuousState>(started.data, IDLE));
+        setNotice(t("transcript.continuous.startedNotice"));
+        setEnabled(true);
+      } else {
+        const stopped = await commands.continuousStop();
+        if (stopped.status === "error") {
+          setError(stopped.error);
+          return;
+        }
+        setState(parse<ContinuousState>(stopped.data, IDLE));
+        setNotice(t("transcript.continuous.stoppedNotice"));
+        const disarmed = await commands.continuousSetEnabled(false);
+        if (disarmed.status === "error") setError(disarmed.error);
+        setEnabled(false);
+      }
+    } finally {
+      setBusy(false);
+      void refresh();
+    }
+  };
+
+  const stop = async () => {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await commands.continuousStop();
       if (result.status === "error") {
         setError(result.error);
       } else {
         setState(parse<ContinuousState>(result.data, IDLE));
-        setNotice(
-          state.running
-            ? t("transcript.continuous.stoppedNotice")
-            : t("transcript.continuous.startedNotice"),
-        );
+        setNotice(t("transcript.continuous.stoppedNotice"));
       }
     } finally {
       setBusy(false);
@@ -181,33 +230,18 @@ export const ContinuousPanel: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-block h-2 w-2 rounded-full ${
-                state.running ? "bg-red-500" : "bg-gray-400"
-              }`}
-            />
-            <span className="font-medium">
-              {state.running
-                ? t("transcript.continuous.running")
-                : t("transcript.continuous.idle")}
-            </span>
-          </div>
-          <p className="mt-1 text-sm opacity-70">
-            {t("transcript.continuous.description")}
-          </p>
-        </div>
-        <Button onClick={toggle} disabled={busy}>
-          {state.running
-            ? t("transcript.continuous.stop")
-            : t("transcript.continuous.start")}
-        </Button>
-      </div>
+      <ToggleSwitch
+        checked={enabled}
+        onChange={() => void toggleEnabled()}
+        disabled={busy}
+        isUpdating={busy}
+        label={t("transcript.continuous.title")}
+        description={t("transcript.continuous.enabledHint")}
+        descriptionMode="inline"
+      />
 
       {state.running && (
-        <div className="flex gap-6 text-sm">
+        <div className="flex items-center gap-6 text-sm">
           <span>
             {t("transcript.continuous.elapsed")}: {formatDuration(state.running_ms)}
           </span>
@@ -219,6 +253,9 @@ export const ContinuousPanel: React.FC = () => {
               {t("transcript.continuous.transcribing")}: {state.pending_segments}
             </span>
           )}
+          <Button onClick={() => void stop()} disabled={busy}>
+            {t("transcript.continuous.stop")}
+          </Button>
         </div>
       )}
 
@@ -248,25 +285,37 @@ export const ContinuousPanel: React.FC = () => {
               className="w-28 rounded border border-gray-300 bg-transparent px-2 py-1"
             />
           </label>
+          {/*
+            The decisive knob. These values are visualizer buckets, not amplitude,
+            and the curve is compressive: 0.12 is only ~1 dB above the floor, so
+            ordinary room tone clears it and no pause is ever detected. Useful
+            range is roughly 0.4 (quiet room) to 0.8 (background music).
+          */}
+          <label className="flex items-center gap-2">
+            {t("transcript.continuous.silenceLevel")}
+            <input
+              type="number"
+              min={0.05}
+              max={0.95}
+              step={0.05}
+              value={settings.silence_level}
+              onChange={(e) => void updateSetting({ silence_level: Number(e.target.value) })}
+              className="w-24 rounded border border-gray-300 bg-transparent px-2 py-1"
+            />
+          </label>
         </div>
       )}
 
       <div className="border-t border-gray-200 pt-3 dark:border-gray-700">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <span className="font-medium">
-              {t("transcript.continuous.bridgeTitle")}
-            </span>
-            <p className="mt-1 text-sm opacity-70">
-              {t("transcript.continuous.bridgeDescription")}
-            </p>
-          </div>
-          <Button onClick={toggleBridge} disabled={busy || !bridge}>
-            {bridge?.enabled
-              ? t("transcript.continuous.bridgeOn")
-              : t("transcript.continuous.bridgeOff")}
-          </Button>
-        </div>
+        <ToggleSwitch
+          checked={bridge?.enabled ?? true}
+          onChange={() => void toggleBridge()}
+          disabled={busy || !bridge}
+          isUpdating={busy}
+          label={t("transcript.continuous.bridgeTitle")}
+          description={t("transcript.continuous.bridgeDescription")}
+          descriptionMode="inline"
+        />
 
         <div className="mt-3 flex items-center gap-2">
           <input
@@ -274,6 +323,7 @@ export const ContinuousPanel: React.FC = () => {
             value={endpointDraft}
             onChange={(e) => setEndpointDraft(e.target.value)}
             spellCheck={false}
+            placeholder={t("transcript.continuous.bridgeDefaultEndpoint")}
             className="flex-1 rounded border border-gray-300 bg-transparent px-2 py-1 font-mono text-sm"
           />
           <Button onClick={saveBridge} disabled={busy || !bridge}>

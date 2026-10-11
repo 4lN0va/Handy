@@ -66,8 +66,8 @@ const DEFAULT_MAX_ATTEMPTS: u32 = 3;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct BridgeConfig {
-    /// Off unless explicitly turned on. The bridge never sends anything by
-    /// accident.
+    /// On by default: the bridge is expected to be talking to the local
+    /// verification tool. It only ever sends to loopback or https.
     pub enabled: bool,
     pub endpoint: String,
     pub timeout_ms: u64,
@@ -83,12 +83,12 @@ pub struct BridgeConfig {
 impl Default for BridgeConfig {
     fn default() -> Self {
         Self {
-            enabled: false,
+            enabled: true,
             endpoint: DEFAULT_ENDPOINT.to_string(),
             timeout_ms: DEFAULT_TIMEOUT_MS,
             heartbeat_secs: DEFAULT_HEARTBEAT_SECS,
             max_attempts: DEFAULT_MAX_ATTEMPTS,
-            send_partials: false,
+            send_partials: true,
         }
     }
 }

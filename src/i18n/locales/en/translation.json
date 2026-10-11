@@ -758,8 +758,8 @@
     "uploaded": "Uploaded (HTTP {{status}}, {{attempts}} attempt(s)).",
     "uploadSkipped": "Nothing was uploaded.",
     "continuous": {
-      "title": "Automatic continuous transcription",
-      "description": "Start once and keep speaking. Handy closes each segment at your natural pauses and starts the next one by itself. Manual recording and the keyboard shortcut are unchanged.",
+      "title": "Continuous listening",
+      "enabledHint": "When on, the transcription shortcut can start continuous listening. When off, the shortcut does nothing.",
       "start": "Start continuous",
       "stop": "Stop continuous",
       "running": "Recording continuously",
@@ -776,10 +776,12 @@
       "bridgeOn": "Enabled",
       "bridgeOff": "Disabled",
       "bridgeSaved": "Endpoint saved.",
+      "bridgeDefaultEndpoint": "http://127.0.0.1:8765",
       "save": "Save",
       "sent": "Events sent",
       "heartbeats": "Heartbeats",
-      "failed": "Failed"
+      "failed": "Failed",
+      "silenceLevel": "Silence threshold (0.05-0.95)"
     }
   },
   "voiceApi": {

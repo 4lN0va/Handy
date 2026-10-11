@@ -13,6 +13,36 @@
 //! and pushed to the front end for the level meter. That is a passive observer of
 //! data the audio path produces anyway, so it cannot alter what gets recorded.
 //!
+//! # Choosing the threshold
+//!
+//! The buckets are **not** raw amplitude. `visualizer.rs` maps a dB range
+//! through a compressive curve:
+//!
+//! ```text
+//! normalized = ((db + 68) / 38).clamp(0, 1)   // DB_MIN -68, DB_MAX -30
+//! bucket     = (normalized * 1.3).powf(0.7)    // GAIN 1.3, CURVE_POWER 0.7
+//! ```
+//!
+//! | bucket | dB    |
+//! |--------|-------|
+//! | 0.12   | -66.6 |
+//! | 0.24   | -64.9 |
+//! | 0.45   | -57.5 |
+//! | 0.56   | -55   |
+//! | 0.71   | -50   |
+//! | 0.95   | -40   |
+//!
+//! So `0.12` sits barely above digital silence: ordinary room tone clears it,
+//! `last_voice_ms` then stays fresh forever, the pause detector never observes a
+//! gap, and segments only ever end at `max_segment_ms`. A threshold that *looks*
+//! small can therefore disable pause segmentation entirely - which is exactly
+//! what happened here.
+//!
+//! The default is a gate around -57 dB: above a typical quiet-room floor and
+//! below normal speech. In a room with continuous background music, raise it
+//! toward 0.7-0.8 (about -50 to -45 dB); that will eventually start cutting quiet
+//! speech, so it is a real trade-off rather than a free win.
+//!
 //! # What it is not
 //!
 //! A speech detector. It answers "how long since the level was last above the
@@ -41,9 +71,11 @@ pub fn monotonic_ms() -> u64 {
 
 /// Level (0.0-1.0) below which a chunk counts as silence.
 ///
-/// Deliberately low: the cost of calling quiet speech "silence" is a segment cut
-/// mid-sentence, which is much worse than waiting slightly longer at a pause.
-pub const DEFAULT_SILENCE_LEVEL: f32 = 0.02;
+/// Roughly -57 dB on the visualizer's curve - see the module docs for the
+/// mapping. Deliberately not lower: anything near the bottom of that curve is
+/// cleared by ordinary room tone, which silently disables pause detection.
+/// Deliberately not much higher: that starts truncating quiet speech.
+pub const DEFAULT_SILENCE_LEVEL: f32 = 0.45;
 
 /// How speech activity is tracked across the audio callback and the driver.
 ///
@@ -138,7 +170,7 @@ mod tests {
 
     #[test]
     fn a_loud_chunk_records_voice_and_a_quiet_one_does_not() {
-        let a = SpeechActivity::new(0.02);
+        let a = SpeechActivity::new(0.45);
         a.note_levels(&[0.0, 0.5, 0.1], 1_000);
         assert_eq!(a.last_voice_ms(), 1_000);
         assert_eq!(a.voiced_chunks(), 1);
@@ -152,7 +184,7 @@ mod tests {
     #[test]
     fn the_peak_of_the_buckets_is_what_decides() {
         // A single loud bucket in an otherwise silent frame still counts as voice.
-        let a = SpeechActivity::new(0.02);
+        let a = SpeechActivity::new(0.45);
         a.note_levels(&[0.0, 0.0, 0.0, 0.9], 500);
         assert_eq!(a.voiced_chunks(), 1);
     }
@@ -161,7 +193,7 @@ mod tests {
     fn an_empty_level_report_is_not_voice() {
         // The visualizer can legitimately return no buckets; treating that as
         // speech would make a mute microphone look like continuous talking.
-        let a = SpeechActivity::new(0.02);
+        let a = SpeechActivity::new(0.45);
         a.note_levels(&[], 700);
         assert_eq!(a.voiced_chunks(), 0);
         assert_eq!(a.last_voice_ms(), 0);
@@ -171,16 +203,16 @@ mod tests {
     #[test]
     fn exactly_at_the_threshold_is_not_voice() {
         // The comparison is strict, so the threshold is the first *silent* level.
-        let a = SpeechActivity::new(0.02);
-        a.note_levels(&[0.02], 100);
+        let a = SpeechActivity::new(0.45);
+        a.note_levels(&[0.45], 100);
         assert_eq!(a.voiced_chunks(), 0);
-        a.note_levels(&[0.0201], 200);
+        a.note_levels(&[0.4501], 200);
         assert_eq!(a.voiced_chunks(), 1);
     }
 
     #[test]
     fn reset_clears_the_counters() {
-        let a = SpeechActivity::new(0.02);
+        let a = SpeechActivity::new(0.45);
         a.note_levels(&[0.5], 100);
         a.reset();
         assert_eq!(a.last_voice_ms(), 0);

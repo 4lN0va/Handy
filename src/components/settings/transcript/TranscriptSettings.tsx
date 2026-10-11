@@ -45,22 +45,10 @@ interface Transcript {
 /** Emitted by the Rust bridge whenever the transcript changes. */
 const TRANSCRIPT_UPDATED_EVENT = "voice-api-transcript-updated";
 
-interface UploadPreview {
-  session_id: string;
-  language: string;
-  source: string;
-  segment_count: number;
-  final_segment_count: number;
-  error_count: number;
-  preview: string;
-}
-
 export const TranscriptSettings: React.FC = () => {
   const { t } = useTranslation();
   const [transcript, setTranscript] = useState<Transcript | null>(null);
-  const [preview, setPreview] = useState<UploadPreview | null>(null);
   const [finalsOnly, setFinalsOnly] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -75,35 +63,23 @@ export const TranscriptSettings: React.FC = () => {
     // read failure here is not surfaced as an error.
   }, []);
 
-  const refreshPreview = useCallback(async () => {
-    const result = await commands.voiceApiUploadPreview();
-    if (result.status === "ok") {
-      setPreview(JSON.parse(result.data) as UploadPreview);
-    } else {
-      setPreview(null);
-    }
-  }, []);
-
   useEffect(() => {
     void refresh();
-    void refreshPreview();
 
     // Live updates pushed from the Rust event bridge.
     const unlisten = listen(TRANSCRIPT_UPDATED_EVENT, () => {
       void refresh();
-      void refreshPreview();
     });
     return () => {
       void unlisten.then((fn) => fn());
     };
-  }, [refresh, refreshPreview]);
+  }, [refresh]);
 
   const handleClear = async () => {
     setError(null);
     const result = await commands.voiceApiClearTranscript();
     if (result.status !== "ok") setError(result.error);
     await refresh();
-    await refreshPreview();
   };
 
   const handleCopy = async () => {
@@ -138,36 +114,6 @@ export const TranscriptSettings: React.FC = () => {
     }
   };
 
-  const handleUpload = async () => {
-    setBusy(true);
-    setError(null);
-    setStatus(null);
-    try {
-      const result = await commands.voiceApiUpload();
-      if (result.status === "ok") {
-        const outcome = JSON.parse(result.data) as {
-          outcome: string;
-          status?: number;
-          attempts?: number;
-        };
-        setStatus(
-          outcome.outcome === "uploaded"
-            ? t("transcript.uploaded", {
-                status: outcome.status ?? 0,
-                attempts: outcome.attempts ?? 1,
-              })
-            : t("transcript.uploadSkipped"),
-        );
-      } else {
-        setError(result.error);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const startEdit = (segment: TranscriptSegment) => {
     setEditing(segment.segment_id);
     setDraft(segment.text);
@@ -179,7 +125,6 @@ export const TranscriptSettings: React.FC = () => {
     if (result.status === "ok") {
       setEditing(null);
       await refresh();
-      await refreshPreview();
     } else {
       setError(result.error);
     }
@@ -191,10 +136,7 @@ export const TranscriptSettings: React.FC = () => {
 
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
-      <SettingsGroup
-        title={t("transcript.continuous.title")}
-        description={t("transcript.continuous.description")}
-      >
+      <SettingsGroup title={t("transcript.continuous.title")}>
         <div className="px-4 py-3">
           <ContinuousPanel />
         </div>
@@ -307,55 +249,6 @@ export const TranscriptSettings: React.FC = () => {
           >
             {t("transcript.clear")}
           </Button>
-        </div>
-      </SettingsGroup>
-
-      <SettingsGroup
-        title={t("transcript.uploadTitle")}
-        description={t("transcript.uploadDescription")}
-      >
-        {preview ? (
-          <div className="px-4 py-3 space-y-1 text-sm">
-            {/* State plainly what is about to leave the machine. */}
-            <div className="text-xs font-medium text-mid-gray uppercase tracking-wide mb-1">
-              {t("transcript.willUpload")}
-            </div>
-            <div>
-              <span className="text-mid-gray">{t("transcript.session")}: </span>
-              {preview.session_id}
-            </div>
-            <div>
-              <span className="text-mid-gray">{t("transcript.language")}: </span>
-              {preview.language}
-            </div>
-            <div>
-              <span className="text-mid-gray">{t("transcript.segments")}: </span>
-              {preview.segment_count} ({preview.final_segment_count}{" "}
-              {t("transcript.confirmedShort")})
-            </div>
-            {preview.preview && (
-              <div className="text-mid-gray mt-1 border-l-2 border-mid-gray/30 pl-2">
-                {preview.preview}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="px-4 py-3 text-sm text-mid-gray">
-            {t("transcript.nothingToUpload")}
-          </div>
-        )}
-
-        <div className="px-4 py-3 flex items-center gap-3">
-          <Button
-            variant="primary"
-            onClick={handleUpload}
-            disabled={busy || !preview || preview.segment_count === 0}
-          >
-            {busy ? t("transcript.uploading") : t("transcript.uploadNow")}
-          </Button>
-          <span className="text-xs text-mid-gray">
-            {t("transcript.uploadManualNote")}
-          </span>
         </div>
       </SettingsGroup>
 

@@ -174,6 +174,7 @@ impl VoiceApiManager {
     }
 
     /// A manager backed by an in-memory secret store. Used by tests.
+    #[cfg(test)]
     pub fn with_memory_secret_store(config_path: PathBuf) -> Self {
         Self::new(config_path, Arc::new(MemorySecretStore::new()))
     }

@@ -65,6 +65,24 @@ pub fn continuous_set_settings(
     manager.set_settings(settings)
 }
 
+/// Whether the continuous-listening feature is armed.
+#[tauri::command]
+#[specta::specta]
+pub fn continuous_enabled(manager: State<'_, Arc<ContinuousManager>>) -> String {
+    manager.is_enabled().to_string()
+}
+
+/// Switch the feature on or off. It only arms the transcription shortcut; it
+/// never starts recording on its own.
+#[tauri::command]
+#[specta::specta]
+pub fn continuous_set_enabled(
+    manager: State<'_, Arc<ContinuousManager>>,
+    enabled: bool,
+) -> Result<(), String> {
+    manager.set_enabled(enabled)
+}
+
 /* --------------------------------- bridge --------------------------------- */
 
 #[tauri::command]

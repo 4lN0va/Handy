@@ -1187,6 +1187,24 @@ async continuousSetSettings(settingsJson: string) : Promise<Result<null, string>
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Whether the continuous-listening feature is armed.
+ */
+async continuousEnabled() : Promise<string> {
+    return await TAURI_INVOKE("continuous_enabled");
+},
+/**
+ * Switch the feature on or off. It only arms the transcription shortcut; it
+ * never starts recording on its own.
+ */
+async continuousSetEnabled(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("continuous_set_enabled", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async bridgeGetConfig() : Promise<string> {
     return await TAURI_INVOKE("bridge_get_config");
 },

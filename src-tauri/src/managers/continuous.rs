@@ -78,7 +78,13 @@ pub struct ContinuousSettings {
     /// as a sequence of segments rather than one unbounded block.
     pub max_segment_ms: u64,
     /// Level (0.0-1.0) below which audio counts as silence.
+    ///
+    /// Raised above typical background-music peaks so a continuous BGM is read
+    /// as silence; the cost is that very quiet speech may be cut slightly early.
     pub silence_level: f32,
+    /// Feature gate: when off, the transcription shortcut does nothing.
+    /// Recording is never started directly from the UI toggle.
+    pub enabled: bool,
 }
 
 impl Default for ContinuousSettings {
@@ -88,6 +94,7 @@ impl Default for ContinuousSettings {
             min_segment_ms: 400,
             max_segment_ms: 30_000,
             silence_level: crate::managers::speech_activity::DEFAULT_SILENCE_LEVEL,
+            enabled: true,
         }
     }
 }
@@ -158,6 +165,19 @@ impl ContinuousManager {
             .unwrap_or_default()
     }
 
+    /// Whether the continuous-listening feature is switched on.
+    pub fn is_enabled(&self) -> bool {
+        self.settings().enabled
+    }
+
+    /// Switch the feature on or off. The toggle never starts recording itself;
+    /// it only arms the transcription shortcut.
+    pub fn set_enabled(&self, enabled: bool) -> Result<(), String> {
+        let mut settings = self.settings();
+        settings.enabled = enabled;
+        self.set_settings(settings)
+    }
+
     pub fn settings_json(&self) -> String {
         serde_json::to_string(&self.settings()).unwrap_or_else(|_| "{}".to_string())
     }
@@ -226,6 +246,9 @@ impl ContinuousManager {
     /// refused rather than starting a competing session.
     pub fn start(&self) -> Result<ContinuousState, String> {
         let settings = self.settings();
+        if !settings.enabled {
+            return Err("continuous transcription is disabled".to_string());
+        }
         {
             let guard = self
                 .running
@@ -394,6 +417,7 @@ fn spawn_monitor(
             let mut segment_started = Instant::now();
             let mut restarts_failed = 0u32;
 
+            let mut last_log_ms = 0u64;
             while !stop.load(Ordering::Acquire) {
                 std::thread::sleep(MONITOR_TICK);
                 if stop.load(Ordering::Acquire) {
@@ -405,6 +429,24 @@ fn spawn_monitor(
                 // so do not act on the absence of data.
                 if activity.total_chunks() == 0 {
                     continue;
+                }
+
+                // Diagnostic: log the decision inputs once per second so a stuck
+                // segment is debuggable from the log instead of guessing.
+                let now_diag = monotonic_ms();
+                if now_diag.saturating_sub(last_log_ms) >= 1000 {
+                    last_log_ms = now_diag;
+                    let lv = activity.last_voice_ms();
+                    let quiet_for = now_diag.saturating_sub(lv);
+                    log::info!(
+                        "continuous monitor: voiced_chunks={}, quiet_for={}ms, threshold={}, segment_age={}ms, pause_ms={}ms, max_segment_ms={}ms",
+                        activity.voiced_chunks(),
+                        quiet_for,
+                        activity.threshold(),
+                        segment_started.elapsed().as_millis(),
+                        settings.pause_ms,
+                        settings.max_segment_ms,
+                    );
                 }
 
                 let now = monotonic_ms();
@@ -598,6 +640,7 @@ mod tests {
             min_segment_ms: 0,
             max_segment_ms: 0,
             silence_level: 5.0,
+            enabled: true,
         }
         .sanitized();
 
