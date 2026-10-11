@@ -26,8 +26,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Everything below is portable Rust with no native build requirements, so
-      # it needs no MSVC, no Xcode project, and no system libraries.
+      # The crate itself is portable Rust with no native build requirements, but
+      # `--all-features` turns on the OS credential store, and the Linux backend
+      # (Secret Service over D-Bus) builds `libdbus-sys`, which needs the D-Bus
+      # development headers. Without them the Linux leg fails with
+      # "failed to run custom build command for libdbus-sys" while macOS and
+      # Windows pass - the backend for each platform is different, so the build
+      # inputs are too.
+      - name: Linux system libraries (D-Bus, for the Secret Service backend)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libdbus-1-dev pkg-config
+
       - name: Rust toolchain
         run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
 
