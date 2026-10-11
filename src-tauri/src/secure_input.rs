@@ -21,6 +21,11 @@
 use serde::Serialize;
 use specta::Type;
 use tauri::{AppHandle, Manager};
+// `Emitter` provides `AppHandle::emit`, which only the macOS implementation
+// (`mod imp`) calls, so it is imported only there. Without this, macOS fails to
+// compile with E0599; importing it unconditionally leaves it unused elsewhere.
+#[cfg(target_os = "macos")]
+use tauri::Emitter;
 
 #[derive(Debug, Clone, Serialize, Type)]
 pub struct SecureInputStatus {
