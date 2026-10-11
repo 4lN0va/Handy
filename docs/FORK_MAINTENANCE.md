@@ -180,10 +180,10 @@ The scripts in `tools/` resolve machine-specific locations through
 `tools/_toolchain.ps1` instead of hardcoding them, so a clone on another machine
 works without editing anything.
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `HANDY_TOOLCHAIN` | `%USERPROFILE%\toolchain` | Root holding w64devkit, cmake, ninja and bun |
-| `HANDY_TARGET_DIR` | `%USERPROFILE%\t` | Cargo target directory |
+| Variable           | Default                   | Meaning                                      |
+| ------------------ | ------------------------- | -------------------------------------------- |
+| `HANDY_TOOLCHAIN`  | `%USERPROFILE%\toolchain` | Root holding w64devkit, cmake, ninja and bun |
+| `HANDY_TARGET_DIR` | `%USERPROFILE%\t`         | Cargo target directory                       |
 
 Point them anywhere:
 
