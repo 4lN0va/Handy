@@ -12,9 +12,11 @@
 #   - CMake + Ninja (portable) and Bun (portable), for when a native build
 #     becomes possible
 #
-# WHAT IT CANNOT PROVIDE
-#   The MSVC toolchain required to link the full Tauri application. See
-#   docs/BUILD_BASELINE.md for the exact blocker and its evidence.
+# WHEN TO USE IT INSTEAD OF msvc_env.ps1
+#   The full application links with MSVC (see msvc_env.ps1). This script is for
+#   the portable crates, which build without a C++ toolchain - useful on a
+#   machine that cannot install one, and for a fast test loop that skips the
+#   native build entirely.
 #
 # USAGE
 #   . .\tools\dev_env.ps1          # dot-source into the current shell
@@ -22,11 +24,12 @@
 
 $ErrorActionPreference = 'Stop'
 
-$ToolchainRoot = Join-Path $env:USERPROFILE 'toolchain'
-$MinGwBin = Join-Path $ToolchainRoot 'w64devkit\w64devkit\bin'
+. "$PSScriptRoot\_toolchain.ps1"
+$MinGwBin = Join-Path $HandyToolchainRoot 'w64devkit\w64devkit\bin'
 
+Assert-HandyToolchain -Requires @('w64devkit\w64devkit\bin\x86_64-w64-mingw32-gcc.exe')
 if (-not (Test-Path $MinGwBin)) {
-    throw "MinGW toolchain not found at $MinGwBin. Run tools/setup_portable_toolchain.ps1 first."
+    throw "MinGW not found under $HandyToolchainRoot. Run tools/setup_portable_toolchain.ps1, or set `$env:HANDY_TOOLCHAIN."
 }
 
 $env:PATH = "$MinGwBin;$env:PATH"
@@ -37,15 +40,15 @@ $env:CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = Join-Path $MinGwBin 'x86_64-w64
 # are involved. BUILD.md recommends a short CARGO_TARGET_DIR for the same
 # reason. This is per-shell only and does NOT touch the user's environment.
 if (-not $env:CARGO_TARGET_DIR) {
-    $env:CARGO_TARGET_DIR = Join-Path $env:USERPROFILE 't'
+    $env:CARGO_TARGET_DIR = $HandyTargetDir
 }
 
 # Portable CMake/Ninja/Bun, if they were extracted.
-$cmakeBin = Get-ChildItem (Join-Path $ToolchainRoot 'cmake') -Recurse -Filter 'cmake.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+$cmakeBin = Get-ChildItem (Join-Path $HandyToolchainRoot 'cmake') -Recurse -Filter 'cmake.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($cmakeBin) { $env:PATH = "$($cmakeBin.DirectoryName);$env:PATH" }
-$ninjaExe = Get-ChildItem (Join-Path $ToolchainRoot 'ninja') -Recurse -Filter 'ninja.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+$ninjaExe = Get-ChildItem (Join-Path $HandyToolchainRoot 'ninja') -Recurse -Filter 'ninja.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($ninjaExe) { $env:PATH = "$($ninjaExe.DirectoryName);$env:PATH" }
-$bunExe = Get-ChildItem (Join-Path $ToolchainRoot 'bun') -Recurse -Filter 'bun.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+$bunExe = Get-ChildItem (Join-Path $HandyToolchainRoot 'bun') -Recurse -Filter 'bun.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($bunExe) { $env:PATH = "$($bunExe.DirectoryName);$env:PATH" }
 
 # CMake must use Ninja, NOT the default "MSYS Makefiles" generator.

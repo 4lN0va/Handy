@@ -1,8 +1,8 @@
-# Downloads portable, non-admin toolchains into $env:USERPROFILE\toolchain
+# Downloads portable, non-admin toolchains into $root (override with HANDY_TOOLCHAIN)
 # Every item here is per-user and requires no elevation.
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$root = Join-Path $env:USERPROFILE 'toolchain'
+$root = if ($env:HANDY_TOOLCHAIN) { $env:HANDY_TOOLCHAIN } else { Join-Path $env:USERPROFILE 'toolchain' }
 $dl = Join-Path $root '_dl'
 New-Item -ItemType Directory -Force -Path $root, $dl | Out-Null
 

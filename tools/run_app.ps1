@@ -25,7 +25,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$TargetDir = Join-Path $env:USERPROFILE 't\handy-msvc'
+. "$PSScriptRoot\_toolchain.ps1"
+$TargetDir = Join-Path $HandyTargetDir 'handy-msvc'
 $Profile = if ($Release) { 'release' } else { 'debug' }
 $Exe = Join-Path $TargetDir "$Profile\handy.exe"
 $ViteUrl = "http://localhost:$Port"
@@ -49,14 +50,19 @@ if ($existing) {
 if (-not $NoBuild) {
     Write-Host "[1/4] loading the MSVC environment..." -ForegroundColor Cyan
     . (Join-Path $PSScriptRoot 'msvc_env.ps1')
-    $tc = Join-Path $env:USERPROFILE 'toolchain'
+    $tc = $HandyToolchainRoot
     $env:PATH = "$tc\ninja;$tc\bun\bun-windows-x64;$env:PATH"
     $env:CMAKE_GENERATOR = 'Ninja'
     $env:CMAKE_MAKE_PROGRAM = "$tc\ninja\ninja.exe"
     $env:CARGO_TARGET_DIR = $TargetDir
 } else {
-    # Even when skipping the build we still need bun on PATH.
-    $env:PATH = "$env:USERPROFILE\toolchain\bun\bun-windows-x64;$env:PATH"
+    # Even when skipping the build we still need bun on PATH. Resolved rather
+    # than assumed, so a bun installed anywhere else also works.
+    $bun = Get-HandyTool -Subdir 'bun' -Exe 'bun.exe'
+    if ($bun) { $env:PATH = "$($bun.DirectoryName);$env:PATH" }
+    elseif (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
+        throw "bun not found. Install it, or set `$env:HANDY_TOOLCHAIN to a toolchain that contains it."
+    }
 }
 
 # --- 2. make sure the front end is built ------------------------------------

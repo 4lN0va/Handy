@@ -174,6 +174,32 @@ a check of the module contents, not a macOS or Linux build.
 
 ## 7. Building
 
+### Where the tools are expected to live
+
+The scripts in `tools/` resolve machine-specific locations through
+`tools/_toolchain.ps1` instead of hardcoding them, so a clone on another machine
+works without editing anything.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `HANDY_TOOLCHAIN` | `%USERPROFILE%\toolchain` | Root holding w64devkit, cmake, ninja and bun |
+| `HANDY_TARGET_DIR` | `%USERPROFILE%\t` | Cargo target directory |
+
+Point them anywhere:
+
+```powershell
+$env:HANDY_TOOLCHAIN = 'D:\build\toolchain'
+$env:HANDY_TARGET_DIR = 'D:\build\t'
+```
+
+The subdirectories are searched recursively, so the exact extraction folder name
+does not matter. If the root is absent the scripts stop with the path they looked
+in and what to set, rather than failing later on a missing executable.
+
+A short `HANDY_TARGET_DIR` is worth keeping: Windows' 260-character `MAX_PATH` is
+overflowed by nested CMake builds under
+`target\<triple>\build\<crate>-<hash>\out\...`.
+
 ### Windows, locally
 
 Three environment problems must be handled first; see
