@@ -538,7 +538,11 @@ jobs:
           releaseName: ${{ inputs.release-id && format('v{0}', steps.get-version.outputs.version) || '' }}
           releaseId: ${{ inputs.release-id }}
           assetNamePattern: ${{ steps.patch-release-name.outputs.platform }}
-          args: ${{ inputs.build-args }}
+          # createUpdaterArtifacts needs TAURI_SIGNING_PRIVATE_KEY; without it
+          # the bundler stops with "A public key has been found, but no private
+          # key". An unsigned fork build has no updater key, so it builds
+          # without the .sig artifacts the upstream updater consumes.
+          args: ${{ inputs.build-args }} --config ./src-tauri/tauri.unsigned.conf.json
 
       - name: Build with Tauri (signed)
         if: ${{ inputs.sign-binaries }}
