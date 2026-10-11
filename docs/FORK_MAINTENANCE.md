@@ -1,7 +1,7 @@
 # Fork maintenance and building on GitHub
 
-This repository is a personal fork of [`cjpais/Handy`](https://github.com/cjpais/Handy).
-It is **not** intended to be contributed back upstream. This document records why
+This is a personal, public fork of [`cjpais/Handy`](https://github.com/cjpais/Handy).
+Work does **not** go back upstream, and **upstream merges are not planned**. It is intended for an institution to deploy. This document records why
 it is a fork rather than a fresh repository, how it is laid out, and what has to
 change before GitHub Actions will build it cleanly on all three platforms.
 
@@ -214,7 +214,24 @@ a missing front end.
 Use upstream's `main-build.yml` (push to `main`) or run it manually from the
 Actions tab. It builds unsigned installers for macOS, Linux and Windows.
 
-## 8. Documentation map
+## 8. Fork defaults
+
+| Decision | Value | Why |
+|---|---|---|
+| Default model | **Whisper Medium** (ecommended_rank: 1) | 99 languages including the Traditional Chinese this fork is used for, and Apache-2.0, so a public deployment carries no distribution constraint. Parakeet Unified EN is demoted to rank 2 rather than removed, so it is still offered as the fast English-only pick. |
+
+The default is set through model_license_overrides.json and applied by
+	ools/apply_license_overrides.mjs, **not** by editing catalog.json directly:
+the catalogue is generated upstream by scripts/gen_catalog.py, so a hand-edit
+would be lost if it were regenerated, and the override file keeps the reasoning
+auditable. ode tools/apply_license_overrides.mjs --check fails CI if the two
+drift apart.
+
+Onboarding presents the first two recommended models in rank order as top picks,
+and auto-selection after onboarding takes the first *downloaded* model in the same
+order, so rank 1 is the default in both places.
+
+## 9. Documentation map
 
 | Document | Contents |
 |---|---|

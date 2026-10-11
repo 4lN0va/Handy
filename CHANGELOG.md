@@ -10,6 +10,16 @@ currently publish versioned releases of its own.
 
 ## [Unreleased]
 
+### Changed
+
+- **Default model is now Whisper Medium.** It was ranked 5 of the recommended models;
+  Parakeet Unified EN held rank 1. Whisper Medium is the widest-coverage option
+  (99 languages, including the Traditional Chinese this fork is used for) and is
+  Apache-2.0, which matters for a public fork an institution may deploy. Parakeet is
+  demoted to rank 2 rather than dropped, so it is still offered as the fast
+  English-only pick. Applied through model_license_overrides.json, so it survives a
+  catalogue regeneration and its reasoning is auditable.
+
 ### Phase 4 — automatic continuous transcription + verification-tool bridge
 
 #### Added
