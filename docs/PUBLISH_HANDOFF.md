@@ -57,7 +57,7 @@ that the work is missing or that the wrong repository has been found.
 |---|---|---|
 | Remotes | `git remote -v` | `origin` → `https://github.com/4lN0va/Handy.git`, `upstream` → `https://github.com/cjpais/Handy.git` |
 | Working tree clean | `git status --porcelain` | no output |
-| Commits to publish | `git rev-list --count upstream/main..HEAD` | **15** |
+| Commits to publish | `git rev-list --count upstream/main..HEAD` | **non-zero** — deliberately not a fixed number, which goes stale on the next doc commit |
 | Push access | `gh auth status` | must be logged in as **`4lN0va`** |
 
 **The access check is the one that fails.** `gh` on the machine where this was
