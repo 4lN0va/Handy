@@ -7,6 +7,50 @@ All work is already committed locally on `feature/voice-api-mvp`.
 
 ---
 
+## STOP — verify you are in the right repository first
+
+These are **two different repositories on the same machine**, and they are easy to
+confuse because both are forks under the same account:
+
+| Repository | Path (Windows) | Path (WSL) | Remote |
+|---|---|---|---|
+| **This fork — the one to publish** | `C:\Users\Nova\Project Brief\handy-fork` | `/mnt/c/Users/Nova/Project Brief/handy-fork` | `4lN0va/Handy` |
+| The verification tool (a different project) | `E:\Default\Desktop\handy-integration-verification-tool` | `/mnt/e/Default/Desktop/handy-integration-verification-tool` | `4lN0va/handy-integration-verification-tool` |
+
+**`/mnt/e/...` is not this repository.** Working there pushes the verification tool
+to the verification tool's own remote, and `4lN0va/Handy` stays untouched.
+
+The path contains a space, so it must be quoted:
+
+```bash
+cd "/mnt/c/Users/Nova/Project Brief/handy-fork"
+```
+
+### Gate: run this before pushing anything
+
+```bash
+git rev-parse --show-toplevel          # .../handy-fork
+git rev-parse --abbrev-ref HEAD        # feature/voice-api-mvp
+git remote get-url origin              # https://github.com/4lN0va/Handy.git
+git rev-list --count upstream/main..HEAD   # 16
+git status --porcelain                 # no output
+```
+
+All five must match. If `origin` shows `handy-integration-verification-tool`, you
+are in the wrong repository — stop.
+
+### "0 commits ahead" on `4lN0va/Handy` is expected, not a problem
+
+Nothing has ever been pushed. `4lN0va/Handy` being byte-identical to upstream is
+the **starting state**: the 16 commits exist only in this local working copy. That
+is precisely what this handoff exists to change.
+
+If a check of the GitHub side shows `0 commits ahead`, no `PUBLISH_HANDOFF.md` and
+no commits, that is consistent with an unpushed local branch. It is not evidence
+that the work is missing or that the wrong repository has been found.
+
+---
+
 ## 0. Preconditions
 
 | Check | Command | Expected |
