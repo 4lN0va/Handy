@@ -50,10 +50,11 @@ Handy is a cross-platform desktop application that provides simple, privacy-focu
 > a clean repository, how to lay out the remotes, which CI workflows work on a
 > fork, and how to build all three platforms:
 > [`docs/FORK_MAINTENANCE.md`](docs/FORK_MAINTENANCE.md).
->> **Developing on this fork:** start with
-> [`docs/BUILD_BASELINE.md`](docs/BUILD_BASELINE.md). Use `tools/msvc_env.ps1` to
-> build the application, and `tools/dev_env.ps1` to build and test the portable
-> `handy-voice-api` crate without the GUI toolchain.
+>
+> > **Developing on this fork:** start with
+> > [`docs/BUILD_BASELINE.md`](docs/BUILD_BASELINE.md). Use `tools/msvc_env.ps1` to
+> > build the application, and `tools/dev_env.ps1` to build and test the portable
+> > `handy-voice-api` crate without the GUI toolchain.
 
 ## Why Handy?
 

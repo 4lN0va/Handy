@@ -47,9 +47,9 @@ async function findTarget() {
   // Prefer the main application window. Handy also creates a small always-on-top
   // "overlay" page for the recording indicator, and it usually registers first;
   // targeting it by accident would make every assertion read the wrong document.
-  const pages = list.filter((t) => t.type === 'page' && t.webSocketDebuggerUrl);
+  const pages = list.filter((t) => t.type === "page" && t.webSocketDebuggerUrl);
   if (pages.length === 0) {
-    console.error('no page targets found. Targets seen:');
+    console.error("no page targets found. Targets seen:");
     for (const t of list) console.error(`  ${t.type}  ${t.url}`);
     process.exit(2);
   }
@@ -63,7 +63,7 @@ async function findTarget() {
     }
     return match;
   }
-  return pages.find((t) => !t.url.includes('overlay')) ?? pages[0];
+  return pages.find((t) => !t.url.includes("overlay")) ?? pages[0];
 }
 
 /** Minimal CDP client over the target's WebSocket. */
@@ -77,11 +77,11 @@ class Cdp {
   connect() {
     return new Promise((resolve, reject) => {
       this.ws = new WebSocket(this.url);
-      this.ws.addEventListener('open', () => resolve());
-      this.ws.addEventListener('error', (e) =>
-        reject(new Error(`websocket error: ${e.message ?? 'unknown'}`)),
+      this.ws.addEventListener("open", () => resolve());
+      this.ws.addEventListener("error", (e) =>
+        reject(new Error(`websocket error: ${e.message ?? "unknown"}`)),
       );
-      this.ws.addEventListener('message', (ev) => {
+      this.ws.addEventListener("message", (ev) => {
         let msg;
         try {
           msg = JSON.parse(ev.data);
@@ -114,7 +114,7 @@ class Cdp {
 
   /** Evaluate an expression in the page, awaiting promises. */
   async evaluate(expression) {
-    const result = await this.send('Runtime.evaluate', {
+    const result = await this.send("Runtime.evaluate", {
       expression,
       awaitPromise: true,
       returnByValue: true,
@@ -143,23 +143,23 @@ function fail(message) {
 
 const [action, ...rest] = process.argv.slice(2);
 if (!action) {
-  fail('usage: cdp_drive.mjs <targets|text|eval|click|emit|wait> [args]');
+  fail("usage: cdp_drive.mjs <targets|text|eval|click|emit|wait> [args]");
 }
 
 const target = await findTarget();
 const cdp = new Cdp(target.webSocketDebuggerUrl);
 await cdp.connect();
-await cdp.send('Runtime.enable');
+await cdp.send("Runtime.enable");
 
 try {
   switch (action) {
-    case 'targets': {
+    case "targets": {
       const res = await fetch(ENDPOINT);
       for (const t of await res.json()) console.log(`${t.type}\t${t.url}`);
       break;
     }
 
-    case 'text': {
+    case "text": {
       const text = await cdp.evaluate(
         `document.body ? document.body.innerText : '(no body)'`,
       );
@@ -167,17 +167,17 @@ try {
       break;
     }
 
-    case 'eval': {
-      const expr = rest.join(' ');
-      if (!expr) fail('eval needs an expression');
+    case "eval": {
+      const expr = rest.join(" ");
+      if (!expr) fail("eval needs an expression");
       const out = await cdp.evaluate(expr);
-      console.log(typeof out === 'string' ? out : JSON.stringify(out, null, 2));
+      console.log(typeof out === "string" ? out : JSON.stringify(out, null, 2));
       break;
     }
 
-    case 'click': {
+    case "click": {
       const selector = rest[0];
-      if (!selector) fail('click needs a CSS selector');
+      if (!selector) fail("click needs a CSS selector");
       const clicked = await cdp.evaluate(`(() => {
         const el = document.querySelector(${JSON.stringify(selector)});
         if (!el) return 'NOT_FOUND';
@@ -185,15 +185,15 @@ try {
         el.click();
         return 'CLICKED';
       })()`);
-      if (clicked === 'NOT_FOUND') fail(`no element matches ${selector}`);
+      if (clicked === "NOT_FOUND") fail(`no element matches ${selector}`);
       console.log(clicked);
       break;
     }
 
-    case 'emit': {
+    case "emit": {
       const eventName = rest[0];
-      const payloadJson = rest[1] ?? 'null';
-      if (!eventName) fail('emit needs an event name');
+      const payloadJson = rest[1] ?? "null";
+      if (!eventName) fail("emit needs an event name");
       // Tauri 2 exposes its IPC entry point on window.__TAURI_INTERNALS__. The
       // event plugin's emit command is `plugin:event|emit`.
       const result = await cdp.evaluate(`(async () => {
@@ -207,17 +207,17 @@ try {
         });
         return 'EMITTED';
       })()`);
-      if (result === 'NO_TAURI_INTERNALS') {
-        fail('window.__TAURI_INTERNALS__ is not available in this page');
+      if (result === "NO_TAURI_INTERNALS") {
+        fail("window.__TAURI_INTERNALS__ is not available in this page");
       }
       console.log(result);
       break;
     }
 
-    case 'wait': {
+    case "wait": {
       const selector = rest[0];
       const timeout = Number(rest[1] ?? 10000);
-      if (!selector) fail('wait needs a CSS selector');
+      if (!selector) fail("wait needs a CSS selector");
       const found = await cdp.evaluate(`(async () => {
         const deadline = Date.now() + ${timeout};
         while (Date.now() < deadline) {
@@ -226,7 +226,7 @@ try {
         }
         return false;
       })()`);
-      console.log(found ? 'FOUND' : 'TIMEOUT');
+      console.log(found ? "FOUND" : "TIMEOUT");
       if (!found) process.exitCode = 1;
       break;
     }

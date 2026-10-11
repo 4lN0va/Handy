@@ -17,15 +17,15 @@ Phase 3 was worth running. **Six defects were found, five of them by operating t
 real application rather than by testing the code** — including three that made
 features completely non-functional while every unit test passed.
 
-| # | Defect | Severity | Status |
-|---|---|---|---|
-| 1 | Managed state double-wrapped in `Arc`, so **every `voice_api` command failed at runtime** | Critical | **fixed, verified** |
-| 2 | `keyring` compiled with no backend → API key **silently stored nothing** | Critical (security) | **fixed, verified** |
-| 3 | `reqwest::blocking` client built on the async runtime → **upload sent nothing** | Critical | **fixed, verified** |
-| 4 | Single-flight permit leaked on early return → **uploads permanently disabled until restart** | High | **fixed, verified** |
-| 5 | Late partial after final created a **phantom segment** | Medium | **fixed, verified** |
-| 6 | Replaying a final **duplicated the transcript** | Medium | **fixed, verified** |
-| 7 | Local duplicate-upload suppression never fires (client rebuilt per call) | Medium | **open — documented** |
+| #   | Defect                                                                                       | Severity            | Status                |
+| --- | -------------------------------------------------------------------------------------------- | ------------------- | --------------------- |
+| 1   | Managed state double-wrapped in `Arc`, so **every `voice_api` command failed at runtime**    | Critical            | **fixed, verified**   |
+| 2   | `keyring` compiled with no backend → API key **silently stored nothing**                     | Critical (security) | **fixed, verified**   |
+| 3   | `reqwest::blocking` client built on the async runtime → **upload sent nothing**              | Critical            | **fixed, verified**   |
+| 4   | Single-flight permit leaked on early return → **uploads permanently disabled until restart** | High                | **fixed, verified**   |
+| 5   | Late partial after final created a **phantom segment**                                       | Medium              | **fixed, verified**   |
+| 6   | Replaying a final **duplicated the transcript**                                              | Medium              | **fixed, verified**   |
+| 7   | Local duplicate-upload suppression never fires (client rebuilt per call)                     | Medium              | **open — documented** |
 
 Also fixed: two scripts referenced by the docs were missing from the repository,
 and `fetch_model.ps1` misread the catalogue.
@@ -55,13 +55,13 @@ environment scripts put them there. **PASS**
 
 ## 2. Regression suites
 
-| Suite | Command | Result |
-|---|---|---|
-| Application crate | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | **295 passed, 0 failed, 16 ignored** |
-| `handy-voice-api` | `cargo +…-gnu test --all-features` | **182 unit + 11 HTTP + 1 doctest** |
-| OS credential store | `cargo … test --features keyring --test os_keyring -- --ignored` | **8 passed** |
-| Formatting / lints | `cargo fmt --check`, `clippy --all-targets --all-features -- -D warnings` | clean |
-| Front end | `bun run build` | 2129 modules, `tsc` clean |
+| Suite               | Command                                                                   | Result                               |
+| ------------------- | ------------------------------------------------------------------------- | ------------------------------------ |
+| Application crate   | `cargo test --manifest-path src-tauri/Cargo.toml --lib`                   | **295 passed, 0 failed, 16 ignored** |
+| `handy-voice-api`   | `cargo +…-gnu test --all-features`                                        | **182 unit + 11 HTTP + 1 doctest**   |
+| OS credential store | `cargo … test --features keyring --test os_keyring -- --ignored`          | **8 passed**                         |
+| Formatting / lints  | `cargo fmt --check`, `clippy --all-targets --all-features -- -D warnings` | clean                                |
+| Front end           | `bun run build`                                                           | 2129 modules, `tsc` clean            |
 
 Test counts moved during this phase as fixes landed (178 → 182 in the crate,
 294 → 295 in the app): the new tests lock in the defects found below.
@@ -93,6 +93,7 @@ state, not an error.
 wrap becomes a compile error rather than a runtime one.
 
 **Verified after fix:**
+
 ```
 voice_api_get_config      OK {"base_url":"","endpoint":"transcripts",...
 voice_api_has_api_key     OK false
@@ -122,6 +123,7 @@ The in-memory mock store had passed all along and could not have caught this —
 which is exactly why mock results are not OS-backend results.
 
 **Fix, two parts:**
+
 1. Enable `windows-native`, `apple-native`, `sync-secret-service`, `crypto-rust`.
    All three are safe together: `keyring` declares their crates under
    `[target.'cfg(target_os = …)'.dependencies]`, so only the relevant one builds.
@@ -134,6 +136,7 @@ use a dedicated `handy-voice-api-selftest` service, so they cannot read or destr
 the application's real key; one test asserts that isolation directly.
 
 **Confirmed in the running app** — the log shows the real Windows credential store:
+
 ```
 [keyring][DEBUG] creating entry with service handy-voice-api, user handy-voice-api:custom
 [keyring][DEBUG] created entry WinCredential { username: "handy-voice-api:custom", ... }
@@ -159,9 +162,10 @@ This is invisible to the crate's own tests: `tests/http_integration.rs` drives t
 **same** `ReqwestTransport` over real sockets and passes 11/11, because it runs on
 ordinary threads with no ambient async runtime.
 
-**Fix:** construct the client *inside* the `spawn_blocking` closure.
+**Fix:** construct the client _inside_ the `spawn_blocking` closure.
 
 **Verified after fix** — the real app uploaded and the loopback backend received it:
+
 ```
 invoke voice_api_upload
 {"outcome":"uploaded","status":200,"attempts":1,"idempotency_key":"abf422dade7b9039848267967e78d059"}
@@ -205,10 +209,12 @@ upload succeeded.
 recognition payloads.
 
 Injected `partial → final → late partial → replay final` produced:
+
 ```
 CONFIRMED   你好，我想測試語音辨識。今天天氣很好，適合出門走走。
 RECOGNIZING 你好，我想測試                              <- phantom segment
 ```
+
 and the model reported `segment_count: 2, final_segment_count: 2` with two
 identical confirmed segments.
 
@@ -229,17 +235,19 @@ misleading than a duplicated transcript, and upstream stops the stream at finali
 so this window is pathological rather than routine.
 
 **Verified after fix in the running app:**
+
 ```
 partial -> final -> late partial -> replay final
   voice_api_upload_preview -> segment_count: 1, final_segment_count: 1
   UI shows a single CONFIRMED block, no phantom RECOGNIZING
 ```
+
 Four new unit tests cover it, including a negative control that the guard does not
 swallow genuine new speech.
 
 > Note: the pre-existing test named
 > `a_late_partial_after_final_does_not_reopen_the_segment` did **not** cover this.
-> Its "late partial" was text that was *not* a prefix of the finalized text, so it
+> Its "late partial" was text that was _not_ a prefix of the finalized text, so it
 > exercised the discontinuity path instead. The name was misleading; the real case
 > is now covered.
 
@@ -276,13 +284,13 @@ Model: `handy-computer/Breeze-ASR-25-gguf/Breeze-ASR-25-Q5_K_M.gguf`
 (1,106.6 MB, SHA-256 verified against the catalogue digest
 `c871fc81…139b` before use). Backend: **Vulkan0 — NVIDIA GeForce RTX 5060 Ti**.
 
-| Sample | Ground truth | Recognition | CER |
-|---|---|---|---|
-| zh_tw_simple | 你好，我想測試語音辨識。 | 你好 我想測試語音辨識 | 0 |
-| zh_tw_daily | 今天天氣很好，適合出門走走。 | 今天天氣很好,適合出門走走 | 0 |
-| zh_tw_mixed | 這個系統的延遲很低，我們用開源的模型來做。 | 這個系統的延遲很低我們用開源的模型來做 | 0 |
-| zh_tw_technical | 請幫我檢查這台電腦的記憶體跟顯示卡。 | 請幫我檢查這臺電腦的記憶體跟顯示卡 | 0.0588 |
-| zh_tw_english_word | 我用 Open Source 的模型，這樣比較安全。 | 我用 open source 的模型這樣比較安全 | 0 |
+| Sample             | Ground truth                               | Recognition                            | CER    |
+| ------------------ | ------------------------------------------ | -------------------------------------- | ------ |
+| zh_tw_simple       | 你好，我想測試語音辨識。                   | 你好 我想測試語音辨識                  | 0      |
+| zh_tw_daily        | 今天天氣很好，適合出門走走。               | 今天天氣很好,適合出門走走              | 0      |
+| zh_tw_mixed        | 這個系統的延遲很低，我們用開源的模型來做。 | 這個系統的延遲很低我們用開源的模型來做 | 0      |
+| zh_tw_technical    | 請幫我檢查這台電腦的記憶體跟顯示卡。       | 請幫我檢查這臺電腦的記憶體跟顯示卡     | 0.0588 |
+| zh_tw_english_word | 我用 Open Source 的模型，這樣比較安全。    | 我用 open source 的模型這樣比較安全    | 0      |
 
 **Overall CER 0.0127** (1 edit over 79 reference characters).
 
@@ -309,22 +317,22 @@ IPC from inside the running page.
 
 Verified live, in the running release-quality build:
 
-| Step | Observed |
-|---|---|
-| `stream-text-event {committed: 你好，我想, tentative: 測試語音辨識}` | UI shows `RECOGNIZING` and `你好，我想測試語音辨識` |
-| same utterance advances | the **same** segment grows in place — no duplicate |
-| `history-update-payload` (final) | `RECOGNIZING` becomes `CONFIRMED`, full final text |
-| late partial after final | **ignored** — no phantom segment |
-| replay of the identical final | **ignored** — no duplication |
-| upload preview panel | `Session: session-1791694443105-0`, `Language: auto` |
+| Step                                                                 | Observed                                             |
+| -------------------------------------------------------------------- | ---------------------------------------------------- |
+| `stream-text-event {committed: 你好，我想, tentative: 測試語音辨識}` | UI shows `RECOGNIZING` and `你好，我想測試語音辨識`  |
+| same utterance advances                                              | the **same** segment grows in place — no duplicate   |
+| `history-update-payload` (final)                                     | `RECOGNIZING` becomes `CONFIRMED`, full final text   |
+| late partial after final                                             | **ignored** — no phantom segment                     |
+| replay of the identical final                                        | **ignored** — no duplication                         |
+| upload preview panel                                                 | `Session: session-1791694443105-0`, `Language: auto` |
 
 The text on screen came from the real event → Rust `app.listen` listener →
 `StreamEventAdapter` → `TranscriptManager` → emitted event → React. Nothing was
-mocked inside the application; the only synthetic part is that the *source* was an
+mocked inside the application; the only synthetic part is that the _source_ was an
 injected event rather than the ASR engine, which emits the identical event with the
 identical payload type.
 
-**Not verified:** the upstream *emission* of those events under live speech, which
+**Not verified:** the upstream _emission_ of those events under live speech, which
 needs a microphone.
 
 ## 11. GUI acceptance
@@ -336,19 +344,19 @@ events. Chrome accessibility must be forced on —
 — otherwise WebView2 exposes no DOM tree at all and the window looks like an empty
 pane.
 
-| Action | Result |
-|---|---|
-| Complete onboarding (select Breeze-ASR-25) | PASS — it detected the pre-placed model, no re-download |
-| Settings sidebar shows **Transcript** and **Voice API** | PASS |
-| Open Transcript page | PASS — full UI renders |
-| Display real transcript | PASS — from injected real events |
-| Distinguish partial vs final | PASS — `RECOGNIZING` vs `CONFIRMED` |
-| Clear / Copy / Export JSON / Upload buttons present and wired | PASS |
-| Save non-sensitive config, store API key, connection test | PASS |
-| Manual upload | PASS — reached the loopback backend |
-| In-progress / success / failure status | PARTIAL — tested via command results and the busy flag; not visually confirmed mid-flight |
-| Recover after an error | PASS — the permit is released and the next operation succeeds |
-| **Genuine human mouse/keyboard clicking** | **NOT RUN** — automation drove the real DOM and real controls, but no human clicked |
+| Action                                                        | Result                                                                                    |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Complete onboarding (select Breeze-ASR-25)                    | PASS — it detected the pre-placed model, no re-download                                   |
+| Settings sidebar shows **Transcript** and **Voice API**       | PASS                                                                                      |
+| Open Transcript page                                          | PASS — full UI renders                                                                    |
+| Display real transcript                                       | PASS — from injected real events                                                          |
+| Distinguish partial vs final                                  | PASS — `RECOGNIZING` vs `CONFIRMED`                                                       |
+| Clear / Copy / Export JSON / Upload buttons present and wired | PASS                                                                                      |
+| Save non-sensitive config, store API key, connection test     | PASS                                                                                      |
+| Manual upload                                                 | PASS — reached the loopback backend                                                       |
+| In-progress / success / failure status                        | PARTIAL — tested via command results and the busy flag; not visually confirmed mid-flight |
+| Recover after an error                                        | PASS — the permit is released and the next operation succeeds                             |
+| **Genuine human mouse/keyboard clicking**                     | **NOT RUN** — automation drove the real DOM and real controls, but no human clicked       |
 
 > Note: WebView2 renders it, so the new screens are in **English** while the rest of
 > the UI is Traditional Chinese. That is the documented fallback: the 79 new
@@ -359,33 +367,33 @@ pane.
 Exported from the running app via the registered command:
 `C:\Users\<you>\Project Brief\_phase3_export\transcript.json`
 
-| Check | Result |
-|---|---|
-| File written | PASS — 393 bytes |
-| UTF-8, no BOM | PASS |
-| Traditional Chinese intact | PASS — `你好，我想測試語音辨識。` byte-exact |
-| Valid against `schema/transcript-v1.0.json` | PASS |
-| Contains schema version / session / segments | PASS — `schemaversion: 1.0`, `sessionid`, `segments[0].final: true` |
-| Contains the API key | **PASS — absent** |
-| Contains `Bearer` / any auth material | **PASS — absent** |
-| Transcript unchanged by exporting | PASS |
-| Saving through the native file dialog | **NOT RUN** — the command was invoked directly with a path; the dialog was not driven |
-| Cancelling the dialog does not clear the transcript | **NOT RUN** |
+| Check                                               | Result                                                                                |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| File written                                        | PASS — 393 bytes                                                                      |
+| UTF-8, no BOM                                       | PASS                                                                                  |
+| Traditional Chinese intact                          | PASS — `你好，我想測試語音辨識。` byte-exact                                          |
+| Valid against `schema/transcript-v1.0.json`         | PASS                                                                                  |
+| Contains schema version / session / segments        | PASS — `schemaversion: 1.0`, `sessionid`, `segments[0].final: true`                   |
+| Contains the API key                                | **PASS — absent**                                                                     |
+| Contains `Bearer` / any auth material               | **PASS — absent**                                                                     |
+| Transcript unchanged by exporting                   | PASS                                                                                  |
+| Saving through the native file dialog               | **NOT RUN** — the command was invoked directly with a path; the dialog was not driven |
+| Cancelling the dialog does not clear the transcript | **NOT RUN**                                                                           |
 
 ## 13. Secret protection
 
-| Check | Result |
-|---|---|
-| Real write to Windows Credential Manager | PASS — observed in the keyring log and by 8 real tests |
-| Real read-back / survival across a fresh handle | PASS |
-| Update, delete, idempotent delete | PASS |
-| Test namespace cannot see the application namespace | PASS |
-| Key absent from the exported JSON | PASS |
-| Key absent from the persisted config file | PASS (unit test) |
-| Key absent from `Debug`/`Display`/error text | PASS (9 unit tests) |
-| GUI config response carries no key | PASS — `voice_api_get_config` returns config only |
-| Silent downgrade to plaintext on store failure | PASS — there is no plaintext fallback path, and `set` now verifies the write |
-| Real credentials exposed during testing | **None.** Only the synthetic value `sk-phase3-test-key-not-real-0001` was used, and the recorder redacts `Authorization` |
+| Check                                               | Result                                                                                                                   |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Real write to Windows Credential Manager            | PASS — observed in the keyring log and by 8 real tests                                                                   |
+| Real read-back / survival across a fresh handle     | PASS                                                                                                                     |
+| Update, delete, idempotent delete                   | PASS                                                                                                                     |
+| Test namespace cannot see the application namespace | PASS                                                                                                                     |
+| Key absent from the exported JSON                   | PASS                                                                                                                     |
+| Key absent from the persisted config file           | PASS (unit test)                                                                                                         |
+| Key absent from `Debug`/`Display`/error text        | PASS (9 unit tests)                                                                                                      |
+| GUI config response carries no key                  | PASS — `voice_api_get_config` returns config only                                                                        |
+| Silent downgrade to plaintext on store failure      | PASS — there is no plaintext fallback path, and `set` now verifies the write                                             |
+| Real credentials exposed during testing             | **None.** Only the synthetic value `sk-phase3-test-key-not-real-0001` was used, and the recorder redacts `Authorization` |
 
 ## 14. HTTPS / TLS
 
@@ -420,37 +428,37 @@ The app was launched from the freshly built artifact and its commands were exerc
 
 ## 16. Not done, and why
 
-| Item | Status | Reason |
-|---|---|---|
-| Microphone capture | **BLOCKED** | No loopback or virtual capture device exists; installing a virtual audio driver needs administrator rights and would alter the user's audio configuration. Requires a human speaking. |
-| Real human speech accuracy | **BLOCKED** | Same. TTS results are a best case, not real-world accuracy. |
-| Live streaming through the ASR engine | **BLOCKED** | Needs the microphone path. The bridge itself is verified with real payloads. |
-| Production third-party API | **NOT RUN** | No endpoint, credential or authorisation. Loopback results must not be read as production validation. |
-| TLS handshake / certificate validation | **NOT RUN** | No HTTPS endpoint was contacted. |
-| Human click-through | **NOT RUN** | Automation drove the real DOM and UI Automation invoked real controls, but no human clicked. |
-| Native save/open dialog | **NOT RUN** | The export command was invoked with a path directly. |
-| macOS / Linux build and run | **NOT RUN** | Windows only. |
-| Installer bundling (`tauri build`) | **NOT RUN** | Needs signing configuration. |
-| Duplicate-upload suppression | **FAIL (open)** | §8. |
+| Item                                   | Status          | Reason                                                                                                                                                                                |
+| -------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Microphone capture                     | **BLOCKED**     | No loopback or virtual capture device exists; installing a virtual audio driver needs administrator rights and would alter the user's audio configuration. Requires a human speaking. |
+| Real human speech accuracy             | **BLOCKED**     | Same. TTS results are a best case, not real-world accuracy.                                                                                                                           |
+| Live streaming through the ASR engine  | **BLOCKED**     | Needs the microphone path. The bridge itself is verified with real payloads.                                                                                                          |
+| Production third-party API             | **NOT RUN**     | No endpoint, credential or authorisation. Loopback results must not be read as production validation.                                                                                 |
+| TLS handshake / certificate validation | **NOT RUN**     | No HTTPS endpoint was contacted.                                                                                                                                                      |
+| Human click-through                    | **NOT RUN**     | Automation drove the real DOM and UI Automation invoked real controls, but no human clicked.                                                                                          |
+| Native save/open dialog                | **NOT RUN**     | The export command was invoked with a path directly.                                                                                                                                  |
+| macOS / Linux build and run            | **NOT RUN**     | Windows only.                                                                                                                                                                         |
+| Installer bundling (`tauri build`)     | **NOT RUN**     | Needs signing configuration.                                                                                                                                                          |
+| Duplicate-upload suppression           | **FAIL (open)** | §8.                                                                                                                                                                                   |
 
 ## 17. Files changed in this phase
 
-| File | Change |
-|---|---|
-| `src-tauri/src/lib.rs` | **Fix**: removed the double `Arc` wrap that broke every command; added an explicit type annotation as a compile-time guard |
-| `src-tauri/src/commands/voice_api.rs` | **Fix**: RAII single-flight permit; client built on the worker thread; 2 new tests |
-| `crates/handy-voice-api/Cargo.toml` | **Fix**: enable the `keyring` platform backends |
-| `crates/handy-voice-api/src/secrets.rs` | **Fix**: `set` verifies by reading back |
-| `crates/handy-voice-api/src/stream_adapter.rs` | **Fix**: straggler and replay suppression; 4 new tests |
-| `crates/handy-voice-api/tests/os_keyring.rs` | New: 8 real credential-store tests (ignored by default) |
-| `tools/dev_env.ps1`, `tools/setup_portable_toolchain.ps1` | New in the fork: both were referenced by the docs but missing |
-| `tools/fetch_model.ps1` | New; reads the repo id and revision correctly |
-| `tools/gen_tts_corpus.ps1`, `tools/tts_corpus.json` | New: TTS corpus with known ground truth |
-| `tools/run_asr_corpus.ps1` | New: runs real ASR and scores it |
-| `tools/ui_probe.ps1` | New: UI Automation driver |
-| `tools/cdp_drive.mjs` | New: WebView2 DevTools driver |
-| `tools/test_backend.mjs` | New: loopback recording server |
-| `docs/PHASE3_VALIDATION_PLAN.md`, `docs/PHASE3_TEST_REPORT.md` | New |
+| File                                                           | Change                                                                                                                     |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `src-tauri/src/lib.rs`                                         | **Fix**: removed the double `Arc` wrap that broke every command; added an explicit type annotation as a compile-time guard |
+| `src-tauri/src/commands/voice_api.rs`                          | **Fix**: RAII single-flight permit; client built on the worker thread; 2 new tests                                         |
+| `crates/handy-voice-api/Cargo.toml`                            | **Fix**: enable the `keyring` platform backends                                                                            |
+| `crates/handy-voice-api/src/secrets.rs`                        | **Fix**: `set` verifies by reading back                                                                                    |
+| `crates/handy-voice-api/src/stream_adapter.rs`                 | **Fix**: straggler and replay suppression; 4 new tests                                                                     |
+| `crates/handy-voice-api/tests/os_keyring.rs`                   | New: 8 real credential-store tests (ignored by default)                                                                    |
+| `tools/dev_env.ps1`, `tools/setup_portable_toolchain.ps1`      | New in the fork: both were referenced by the docs but missing                                                              |
+| `tools/fetch_model.ps1`                                        | New; reads the repo id and revision correctly                                                                              |
+| `tools/gen_tts_corpus.ps1`, `tools/tts_corpus.json`            | New: TTS corpus with known ground truth                                                                                    |
+| `tools/run_asr_corpus.ps1`                                     | New: runs real ASR and scores it                                                                                           |
+| `tools/ui_probe.ps1`                                           | New: UI Automation driver                                                                                                  |
+| `tools/cdp_drive.mjs`                                          | New: WebView2 DevTools driver                                                                                              |
+| `tools/test_backend.mjs`                                       | New: loopback recording server                                                                                             |
+| `docs/PHASE3_VALIDATION_PLAN.md`, `docs/PHASE3_TEST_REPORT.md` | New                                                                                                                        |
 
 ## 18. Next steps
 

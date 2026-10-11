@@ -99,7 +99,7 @@ export const ContinuousPanel: React.FC = () => {
     setEnabled(en === "true");
     setBridge((prev) => {
       const next = parse<BridgeConfig>(cfg, prev ?? ({} as BridgeConfig));
-      setEndpointDraft((d) => (d === "" ? next.endpoint ?? "" : d));
+      setEndpointDraft((d) => (d === "" ? (next.endpoint ?? "") : d));
       return next;
     });
     setBridgeStatus(parse<BridgeStatus>(bs, null as unknown as BridgeStatus));
@@ -158,7 +158,6 @@ export const ContinuousPanel: React.FC = () => {
       void refresh();
     }
   };
-
 
   const saveBridge = async () => {
     if (!bridge) return;
@@ -222,14 +221,16 @@ export const ContinuousPanel: React.FC = () => {
       {state.running && (
         <div className="flex items-center gap-6 text-sm">
           <span>
-            {t("transcript.continuous.elapsed")}: {formatDuration(state.running_ms)}
+            {t("transcript.continuous.elapsed")}:{" "}
+            {formatDuration(state.running_ms)}
           </span>
           <span>
             {t("transcript.continuous.segments")}: {state.segments_completed}
           </span>
           {state.pending_segments > 0 && (
             <span>
-              {t("transcript.continuous.transcribing")}: {state.pending_segments}
+              {t("transcript.continuous.transcribing")}:{" "}
+              {state.pending_segments}
             </span>
           )}
         </div>
@@ -245,7 +246,9 @@ export const ContinuousPanel: React.FC = () => {
               max={10000}
               step={50}
               value={settings.pause_ms}
-              onChange={(e) => void updateSetting({ pause_ms: Number(e.target.value) })}
+              onChange={(e) =>
+                void updateSetting({ pause_ms: Number(e.target.value) })
+              }
               className="w-24 rounded border border-gray-300 bg-transparent px-2 py-1"
             />
           </label>
@@ -257,7 +260,9 @@ export const ContinuousPanel: React.FC = () => {
               max={600000}
               step={1000}
               value={settings.max_segment_ms}
-              onChange={(e) => void updateSetting({ max_segment_ms: Number(e.target.value) })}
+              onChange={(e) =>
+                void updateSetting({ max_segment_ms: Number(e.target.value) })
+              }
               className="w-28 rounded border border-gray-300 bg-transparent px-2 py-1"
             />
           </label>
@@ -275,7 +280,9 @@ export const ContinuousPanel: React.FC = () => {
               max={0.95}
               step={0.05}
               value={settings.silence_level}
-              onChange={(e) => void updateSetting({ silence_level: Number(e.target.value) })}
+              onChange={(e) =>
+                void updateSetting({ silence_level: Number(e.target.value) })
+              }
               className="w-24 rounded border border-gray-300 bg-transparent px-2 py-1"
             />
           </label>

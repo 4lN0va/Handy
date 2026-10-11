@@ -9,7 +9,7 @@ Thank you for your interest in contributing to Handy! This guide will help you g
 > fork-specific things apply:
 >
 > 1. **The feature freeze below is an upstream policy for upstream PRs.** It does
->    not govern what this fork may add. Contributions to *this* fork's additions
+>    not govern what this fork may add. Contributions to _this_ fork's additions
 >    (the voice-API layer, JSON export, upload client, licence tooling) are
 >    welcome.
 > 2. **This environment may not be able to build the application.** If your
@@ -34,10 +34,10 @@ Thank you for your interest in contributing to Handy! This guide will help you g
 >
 > **Two rules that are not negotiable:**
 >
-> * **Do not commit an API key**, and do not add code that can put one in an
+> - **Do not commit an API key**, and do not add code that can put one in an
 >   export, a settings file, or a log line. `handy-voice-api` has tests that fail
 >   if you do; extend them rather than working around them.
-> * **Do not mark a model with a restricted or unconfirmed licence as a
+> - **Do not mark a model with a restricted or unconfirmed licence as a
 >   recommended default.** `node tools/gen_model_licenses.mjs --check` fails CI
 >   if one is, and `SECURITY.md` explains why.
 >

@@ -33,7 +33,7 @@ currently publish versioned releases of its own.
     (`managers/speech_activity.rs` observes them passively) and the ordinary
     record -> stop -> transcribe path. No parallel audio pipeline, and the
     recorder's VAD is untouched.
-  - The next recording starts *before* transcription runs, so audio captured
+  - The next recording starts _before_ transcription runs, so audio captured
     during transcription lands in the next segment instead of being dropped.
   - Manual recording, the keyboard shortcut, ASR and clipboard behaviour are
     unchanged; continuous mode uses its own binding id.
@@ -70,6 +70,7 @@ currently publish versioned releases of its own.
   (session, segment, final) appears exactly once.
 - The microphone was **not** exercised in this session: segmentation timing is
   reasoned, not measured. See `docs/PHASE4_CONTINUOUS_INTEGRATION.md`.
+
 ### Phase 3 — real-world validation and hardening
 
 Operating the application found six defects, five of which unit tests could not
@@ -101,7 +102,7 @@ passed.
 - Two scripts the documentation told the reader to use (`tools/dev_env.ps1`,
   `tools/setup_portable_toolchain.ps1`) were missing from the repository.
 - `tools/fetch_model.ps1` looked for `source.repo_id`; in `catalog.json` the model
-  `id` *is* the repo id and `revision` is top-level.
+  `id` _is_ the repo id and `revision` is top-level.
 
 #### Added
 
@@ -161,7 +162,7 @@ against a real endpoint, and platforms other than Windows x86_64. See
     pure state machine converting `{committed, tentative}` into segment-addressed
     transcript updates. The upstream payload carries **no segment id and no
     revision**, and each event contains the whole utterance, so identity is
-    derived from the *shape* of the committed prefix (progress / stale /
+    derived from the _shape_ of the committed prefix (progress / stale /
     discontinuity) rather than from the text. Non-streaming models are handled by
     the same path: a final text with no active segment creates and finalizes one.
   - **Two new settings screens**: **Transcript** (live text with tentative text
@@ -220,7 +221,7 @@ against a real endpoint, and platforms other than Windows x86_64. See
   JSON-export and custom-upload layer, kept as a separate crate so it compiles
   and tests independently of the native GUI toolchain.
   - **Transcript model** with stable `segment_id` identity and monotonic
-    `revision` numbers. An update *replaces* the addressed segment rather than
+    `revision` numbers. An update _replaces_ the addressed segment rather than
     appending, so tentative and confirmed text can never both appear. A
     finalized segment is never reopened by a late partial, and a stale or
     duplicate revision is dropped.

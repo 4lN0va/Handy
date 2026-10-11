@@ -48,5 +48,11 @@ jobs:
       target: ${{ matrix.target }}
       build-args: ${{ matrix.args }}
       upload-artifacts: true
-      sign-binaries: true
+      # This fork has no Apple Developer / Azure Trusted Signing credentials, so
+      # signing is off. With sign-binaries: true, build.yml's "import Apple
+      # Developer Certificate" step still runs and feeds an empty base64 string
+      # to `security import`, which fails the macOS matrix legs in ~30s before
+      # compilation starts. Keeping it false makes main-build validate that the
+      # three platforms actually *compile*; artifacts are unsigned.
+      sign-binaries: false
     secrets: inherit

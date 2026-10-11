@@ -11,28 +11,28 @@ part for anyone reproducing this.
 
 ## 1. Machine and environment
 
-| Item | Value |
-|---|---|
-| OS | Windows 10.0.19045 (Windows 10 22H2) |
-| CPU architecture | AMD64 (x86_64), 16 logical cores |
-| Administrator | **No** |
-| GPU | NVIDIA GeForce RTX 5060 Ti, 1 Vulkan device |
-| Shell | PowerShell (`pwsh`) |
+| Item             | Value                                       |
+| ---------------- | ------------------------------------------- |
+| OS               | Windows 10.0.19045 (Windows 10 22H2)        |
+| CPU architecture | AMD64 (x86_64), 16 logical cores            |
+| Administrator    | **No**                                      |
+| GPU              | NVIDIA GeForce RTX 5060 Ti, 1 Vulkan device |
+| Shell            | PowerShell (`pwsh`)                         |
 
 ### Toolchain
 
-| Component | Version | Notes |
-|---|---|---|
-| Rust (default) | 1.98.0 `stable-x86_64-pc-windows-msvc` | used for the application build |
-| Rust (secondary) | 1.99.0 `stable-x86_64-pc-windows-gnu` | per-user, used to test the portable crate |
-| Visual Studio Build Tools | 2022 17.14.37710, `isComplete: true` | `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` present |
-| MSVC toolset | 14.44.35207 | `cl.exe` / `link.exe` |
-| Windows SDK | 10.0.26100.0 | `Include`, `Lib`, `bin` |
-| CMake | 4.4.4 | for `ggml` / `transcribe-cpp` |
-| Ninja | 1.13.2 | CMake generator |
-| Vulkan SDK | 1.4.363.0 | provides `glslc` for `ggml-vulkan` |
-| Bun | 1.4.3 | frontend |
-| ONNX Runtime | downloaded by `ort-sys` | MSVC target only (see §5) |
+| Component                 | Version                                | Notes                                                       |
+| ------------------------- | -------------------------------------- | ----------------------------------------------------------- |
+| Rust (default)            | 1.98.0 `stable-x86_64-pc-windows-msvc` | used for the application build                              |
+| Rust (secondary)          | 1.99.0 `stable-x86_64-pc-windows-gnu`  | per-user, used to test the portable crate                   |
+| Visual Studio Build Tools | 2022 17.14.37710, `isComplete: true`   | `Microsoft.VisualStudio.Component.VC.Tools.x86.x64` present |
+| MSVC toolset              | 14.44.35207                            | `cl.exe` / `link.exe`                                       |
+| Windows SDK               | 10.0.26100.0                           | `Include`, `Lib`, `bin`                                     |
+| CMake                     | 4.4.4                                  | for `ggml` / `transcribe-cpp`                               |
+| Ninja                     | 1.13.2                                 | CMake generator                                             |
+| Vulkan SDK                | 1.4.363.0                              | provides `glslc` for `ggml-vulkan`                          |
+| Bun                       | 1.4.3                                  | frontend                                                    |
+| ONNX Runtime              | downloaded by `ort-sys`                | MSVC target only (see §5)                                   |
 
 Everything is per-user except the VS Build Tools and the Vulkan SDK, which
 required elevation.
@@ -105,8 +105,8 @@ requests elevation; it completed successfully here.
 
 ### 3.4 Stale CMake cache when changing generator
 
-After switching to Ninja, CMake refused with *"generator: Ninja does not match the
-generator used previously"*. The transient cache lives at
+After switching to Ninja, CMake refused with _"generator: Ninja does not match the
+generator used previously"_. The transient cache lives at
 `%LOCALAPPDATA%\tcs\<hash>\build` and had to be cleared once.
 
 ## 4. Proof the toolchain links
@@ -125,11 +125,11 @@ run exit=0
 Kept because it explains the two fixes above, and because the second half is still
 true.
 
-* **MSVC route (was blocked, now resolved):** `link.exe` was absent, and
+- **MSVC route (was blocked, now resolved):** `link.exe` was absent, and
   installing Build Tools requires administrator rights.
   `cargo build` failed with `error: linker 'link.exe' not found`. Resolved by the
   user installing VS Build Tools 2022.
-* **GNU route (blocked, permanently):**
+- **GNU route (blocked, permanently):**
 
   ```
   error: ort-sys: ort does not provide prebuilt binaries for the target
@@ -187,25 +187,25 @@ is `../src/bindings.ts`, resolved relative to the process working directory.
 
 ## 8. What is verified, and how
 
-| # | Claim | Command | Result |
-|---|---|---|---|
-| 1 | MSVC toolchain resolves | `where cl` / `where link` inside `vcvars64` | ✅ |
-| 2 | MSVC links real code | `cargo run` on a `serde` probe | ✅ |
-| 3 | **Full application builds** | `cargo build --manifest-path src-tauri/Cargo.toml` | ✅ `Finished dev profile in 42.26s` |
-| 4 | **Application launches** | `handy.exe --debug` | ✅ running, window titled "Handy" |
-| 5 | Vulkan backend initialises | startup log | ✅ RTX 5060 Ti detected, `Vulkan0, CPU` |
-| 6 | Model catalog loads | startup log | ✅ `Seeded 69 catalog model(s)` |
-| 7 | History DB migrates | startup log | ✅ `Database migrated from version 0 to 4` |
-| 8 | `handy-voice-api` tests | `cargo test --all-features` | ✅ 178 unit + 11 integration + 1 doctest |
-| 9 | Application crate tests | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | ✅ 294 passed, 0 failed, 16 ignored |
-| 10 | Formatting | `cargo fmt --check` | ✅ |
-| 11 | Lints | `cargo clippy --all-targets --all-features -- -D warnings` | ✅ |
-| 12 | Front end | `bun run build` | ✅ 2129 modules |
-| 13 | **Microphone capture** | — | ❌ **not tested** |
-| 14 | **Real ASR accuracy / latency** | — | ❌ **not tested** |
-| 15 | **GUI click-through** | — | ❌ **not tested** |
-| 16 | Installer bundling (`tauri build`) | — | ❌ **not attempted** (needs the signing setup) |
-| 17 | Any platform other than Windows x86_64 | — | ❌ **not tested** |
+| #   | Claim                                  | Command                                                    | Result                                         |
+| --- | -------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
+| 1   | MSVC toolchain resolves                | `where cl` / `where link` inside `vcvars64`                | ✅                                             |
+| 2   | MSVC links real code                   | `cargo run` on a `serde` probe                             | ✅                                             |
+| 3   | **Full application builds**            | `cargo build --manifest-path src-tauri/Cargo.toml`         | ✅ `Finished dev profile in 42.26s`            |
+| 4   | **Application launches**               | `handy.exe --debug`                                        | ✅ running, window titled "Handy"              |
+| 5   | Vulkan backend initialises             | startup log                                                | ✅ RTX 5060 Ti detected, `Vulkan0, CPU`        |
+| 6   | Model catalog loads                    | startup log                                                | ✅ `Seeded 69 catalog model(s)`                |
+| 7   | History DB migrates                    | startup log                                                | ✅ `Database migrated from version 0 to 4`     |
+| 8   | `handy-voice-api` tests                | `cargo test --all-features`                                | ✅ 178 unit + 11 integration + 1 doctest       |
+| 9   | Application crate tests                | `cargo test --manifest-path src-tauri/Cargo.toml --lib`    | ✅ 294 passed, 0 failed, 16 ignored            |
+| 10  | Formatting                             | `cargo fmt --check`                                        | ✅                                             |
+| 11  | Lints                                  | `cargo clippy --all-targets --all-features -- -D warnings` | ✅                                             |
+| 12  | Front end                              | `bun run build`                                            | ✅ 2129 modules                                |
+| 13  | **Microphone capture**                 | —                                                          | ❌ **not tested**                              |
+| 14  | **Real ASR accuracy / latency**        | —                                                          | ❌ **not tested**                              |
+| 15  | **GUI click-through**                  | —                                                          | ❌ **not tested**                              |
+| 16  | Installer bundling (`tauri build`)     | —                                                          | ❌ **not attempted** (needs the signing setup) |
+| 17  | Any platform other than Windows x86_64 | —                                                          | ❌ **not tested**                              |
 
 Rows 13–17 are the honest gaps. **Nothing in this repository claims they work.**
 
@@ -217,14 +217,14 @@ from a controlled loopback test backend rather than a production API.
 Upstream's CI matrix is a statement about **upstream**, not about this fork. No
 platform other than Windows x86_64 has been built or run here.
 
-| Target | Upstream CI builds it | This fork verified |
-|---|:---:|:---:|
-| macOS Apple Silicon (aarch64) | ✅ | ❌ not tested |
-| macOS Intel (x86_64) | ✅ | ❌ not tested |
-| **Windows x86_64** | ✅ | ✅ **built, launched, tests pass** |
-| Windows ARM64 | ✅ | ❌ not tested |
-| Linux x86_64 | ✅ | ❌ not tested |
-| Linux ARM64 | ✅ | ❌ not tested |
+| Target                        | Upstream CI builds it |         This fork verified         |
+| ----------------------------- | :-------------------: | :--------------------------------: |
+| macOS Apple Silicon (aarch64) |          ✅           |           ❌ not tested            |
+| macOS Intel (x86_64)          |          ✅           |           ❌ not tested            |
+| **Windows x86_64**            |          ✅           | ✅ **built, launched, tests pass** |
+| Windows ARM64                 |          ✅           |           ❌ not tested            |
+| Linux x86_64                  |          ✅           |           ❌ not tested            |
+| Linux ARM64                   |          ✅           |           ❌ not tested            |
 
 CI added by this fork (`.github/workflows/voice-api.yml`) runs the portable
 crate's tests, clippy and formatting on **Linux, macOS and Windows** — real
@@ -233,11 +233,11 @@ verified. It does not build the application.
 
 ## 10. Environment deviations worth knowing
 
-* The checkout path contains a space (`C:\Users\<you>\Project Brief`). Build
+- The checkout path contains a space (`C:\Users\<you>\Project Brief`). Build
   artefacts are written outside the repository to `C:\Users\<you>\t`.
-* The Vulkan SDK's installer sets `VULKAN_SDK` at **machine** scope, so an
+- The Vulkan SDK's installer sets `VULKAN_SDK` at **machine** scope, so an
   already-running shell will not see it. `tools/msvc_env.ps1` recovers it
   explicitly rather than silently building without a GPU backend.
-* `cl.exe` and `link.exe` are only available inside the developer environment;
+- `cl.exe` and `link.exe` are only available inside the developer environment;
   `tools/msvc_env.ps1` imports `vcvars64.bat` into the current session and does not
   modify any persistent user setting.

@@ -28,8 +28,8 @@
  * with a redaction marker so that a captured fixture cannot leak a credential.
  */
 
-import { createServer } from 'node:http';
-import { writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { createServer } from "node:http";
+import { writeFileSync, readFileSync, existsSync } from "node:fs";
 
 const args = process.argv.slice(2);
 const getArg = (name, fallback) => {
@@ -37,12 +37,17 @@ const getArg = (name, fallback) => {
   return i >= 0 && args[i + 1] !== undefined ? args[i + 1] : fallback;
 };
 
-const PORT = Number(getArg('--port', 8787));
-const OUT = getArg('--out', 'received.json');
-const INITIAL_STATUS = Number(getArg('--status', 200));
+const PORT = Number(getArg("--port", 8787));
+const OUT = getArg("--out", "received.json");
+const INITIAL_STATUS = Number(getArg("--status", 200));
 
 /** Headers whose values must never be persisted. */
-const REDACTED_HEADERS = new Set(['authorization', 'x-api-key', 'cookie', 'proxy-authorization']);
+const REDACTED_HEADERS = new Set([
+  "authorization",
+  "x-api-key",
+  "cookie",
+  "proxy-authorization",
+]);
 
 let responseStatus = INITIAL_STATUS;
 const received = [];
@@ -50,47 +55,50 @@ const received = [];
 const server = createServer((req, res) => {
   const chunks = [];
   let size = 0;
-  req.on('data', (c) => {
+  req.on("data", (c) => {
     size += c.length;
     if (size > 8 * 1024 * 1024) {
-      res.writeHead(413).end('too large');
+      res.writeHead(413).end("too large");
       req.destroy();
       return;
     }
     chunks.push(c);
   });
 
-  req.on('end', () => {
+  req.on("end", () => {
     const body = Buffer.concat(chunks);
 
     // --- control paths ---
-    if (req.url === '/__control' && req.method === 'POST') {
+    if (req.url === "/__control" && req.method === "POST") {
       try {
-        const cfg = JSON.parse(body.toString('utf8') || '{}');
-        if (typeof cfg.status === 'number') responseStatus = cfg.status;
-        res.writeHead(200, { 'content-type': 'application/json' });
+        const cfg = JSON.parse(body.toString("utf8") || "{}");
+        if (typeof cfg.status === "number") responseStatus = cfg.status;
+        res.writeHead(200, { "content-type": "application/json" });
         res.end(JSON.stringify({ ok: true, status: responseStatus }));
       } catch (e) {
         res.writeHead(400).end(String(e));
       }
       return;
     }
-    if (req.url === '/__requests' && req.method === 'GET') {
-      res.writeHead(200, { 'content-type': 'application/json' });
+    if (req.url === "/__requests" && req.method === "GET") {
+      res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify(received, null, 2));
       return;
     }
-    if (req.url === '/__reset' && req.method === 'POST') {
+    if (req.url === "/__reset" && req.method === "POST") {
       received.length = 0;
       responseStatus = INITIAL_STATUS;
-      res.writeHead(200).end('reset');
+      res.writeHead(200).end("reset");
       return;
     }
 
     // --- the upload path ---
     const headers = [];
     for (const [k, v] of Object.entries(req.headers)) {
-      headers.push([k, REDACTED_HEADERS.has(k.toLowerCase()) ? '***redacted***' : v]);
+      headers.push([
+        k,
+        REDACTED_HEADERS.has(k.toLowerCase()) ? "***redacted***" : v,
+      ]);
     }
 
     const record = {
@@ -98,29 +106,39 @@ const server = createServer((req, res) => {
       path: req.url,
       headers,
       bodyLength: body.length,
-      bodyText: body.toString('utf8'),
+      bodyText: body.toString("utf8"),
       receivedAt: new Date().toISOString(),
     };
     received.push(record);
     persist();
 
-    res.writeHead(responseStatus, { 'content-type': 'application/json', connection: 'close' });
-    res.end(JSON.stringify({ ok: responseStatus < 300, status: responseStatus }));
+    res.writeHead(responseStatus, {
+      "content-type": "application/json",
+      connection: "close",
+    });
+    res.end(
+      JSON.stringify({ ok: responseStatus < 300, status: responseStatus }),
+    );
   });
 });
 
 function persist() {
   try {
-    writeFileSync(OUT, JSON.stringify(received, null, 2), 'utf8');
+    writeFileSync(OUT, JSON.stringify(received, null, 2), "utf8");
   } catch (e) {
-    console.error('could not persist received requests:', e.message);
+    console.error("could not persist received requests:", e.message);
   }
 }
 
-server.listen(PORT, '127.0.0.1', () => {
+server.listen(PORT, "127.0.0.1", () => {
   console.log(`test backend listening on http://127.0.0.1:${PORT}`);
   console.log(`initial status : ${INITIAL_STATUS}`);
   console.log(`recording to   : ${OUT}`);
-  console.log('control        : POST /__control {"status":N} | GET /__requests | POST /__reset');
-  if (existsSync(OUT)) console.log('note           : output file already exists and will be overwritten');
+  console.log(
+    'control        : POST /__control {"status":N} | GET /__requests | POST /__reset',
+  );
+  if (existsSync(OUT))
+    console.log(
+      "note           : output file already exists and will be overwritten",
+    );
 });

@@ -23,11 +23,11 @@
  * `--check` performs no writes and exits 1 if any override is not applied.
  */
 
-import { readFile, writeFile } from 'node:fs/promises';
-import { pathToFileURL } from 'node:url';
+import { readFile, writeFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 
-const DEFAULT_CATALOG = 'src-tauri/src/catalog/catalog.json';
-const DEFAULT_OVERRIDES = 'model_license_overrides.json';
+const DEFAULT_CATALOG = "src-tauri/src/catalog/catalog.json";
+const DEFAULT_OVERRIDES = "model_license_overrides.json";
 
 /**
  * Set a top-level field of one model by editing the raw JSON *text*.
@@ -48,7 +48,9 @@ export function setFieldInRawText(raw, modelId, key, value) {
     throw new Error(`model id '${modelId}' not found in the catalog text`);
   }
   if (raw.indexOf(needle, first + 1) >= 0) {
-    throw new Error(`model id '${modelId}' appears more than once; refusing to guess`);
+    throw new Error(
+      `model id '${modelId}' appears more than once; refusing to guess`,
+    );
   }
 
   // Search for the field only within this model's block, i.e. after its id and
@@ -56,7 +58,9 @@ export function setFieldInRawText(raw, modelId, key, value) {
   const nextIdIdx = raw.indexOf('"id": "', first + needle.length);
   const blockEnd = nextIdIdx < 0 ? raw.length : nextIdIdx;
 
-  const fieldRe = new RegExp(`"${key}"\\s*:\\s*(true|false|null|-?\\d+(?:\\.\\d+)?|"[^"]*")`);
+  const fieldRe = new RegExp(
+    `"${key}"\\s*:\\s*(true|false|null|-?\\d+(?:\\.\\d+)?|"[^"]*")`,
+  );
   const block = raw.slice(first, blockEnd);
   const match = fieldRe.exec(block);
   if (!match) {
@@ -66,7 +70,10 @@ export function setFieldInRawText(raw, modelId, key, value) {
   const absoluteStart = first + match.index;
   const absoluteEnd = absoluteStart + match[0].length;
   return {
-    text: raw.slice(0, absoluteStart) + `"${key}": ${JSON.stringify(value)}` + raw.slice(absoluteEnd),
+    text:
+      raw.slice(0, absoluteStart) +
+      `"${key}": ${JSON.stringify(value)}` +
+      raw.slice(absoluteEnd),
     from: match[1],
   };
 }
@@ -93,7 +100,12 @@ export function applyOverridesToText(raw, overridesFile) {
     for (const [key, value] of Object.entries(override.set ?? {})) {
       const result = setFieldInRawText(text, override.id, key, value);
       if (result.from !== JSON.stringify(value)) {
-        changes.push({ id: override.id, key, from: result.from, to: JSON.stringify(value) });
+        changes.push({
+          id: override.id,
+          key,
+          from: result.from,
+          to: JSON.stringify(value),
+        });
         text = result.text;
       }
     }
@@ -109,12 +121,22 @@ export function findUnapplied(catalog, overridesFile) {
   for (const override of overrides) {
     const model = byId.get(override.id);
     if (!model) {
-      unapplied.push({ id: override.id, key: '<model missing>', expected: null, actual: null });
+      unapplied.push({
+        id: override.id,
+        key: "<model missing>",
+        expected: null,
+        actual: null,
+      });
       continue;
     }
     for (const [key, value] of Object.entries(override.set ?? {})) {
       if (model[key] !== value) {
-        unapplied.push({ id: override.id, key, expected: value, actual: model[key] });
+        unapplied.push({
+          id: override.id,
+          key,
+          expected: value,
+          actual: model[key],
+        });
       }
     }
   }
@@ -122,44 +144,50 @@ export function findUnapplied(catalog, overridesFile) {
 }
 
 export function parseArgs(argv) {
-  const opts = { catalog: DEFAULT_CATALOG, overrides: DEFAULT_OVERRIDES, check: false };
+  const opts = {
+    catalog: DEFAULT_CATALOG,
+    overrides: DEFAULT_OVERRIDES,
+    check: false,
+  };
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--catalog') opts.catalog = argv[++i];
-    else if (argv[i] === '--overrides') opts.overrides = argv[++i];
-    else if (argv[i] === '--check') opts.check = true;
+    if (argv[i] === "--catalog") opts.catalog = argv[++i];
+    else if (argv[i] === "--overrides") opts.overrides = argv[++i];
+    else if (argv[i] === "--check") opts.check = true;
   }
   return opts;
 }
 
 export async function main(argv = process.argv.slice(2)) {
   const opts = parseArgs(argv);
-  const rawCatalog = await readFile(opts.catalog, 'utf8');
+  const rawCatalog = await readFile(opts.catalog, "utf8");
   const catalog = JSON.parse(rawCatalog);
-  const overridesFile = JSON.parse(await readFile(opts.overrides, 'utf8'));
+  const overridesFile = JSON.parse(await readFile(opts.overrides, "utf8"));
 
   if (opts.check) {
     const unapplied = findUnapplied(catalog, overridesFile);
     if (unapplied.length > 0) {
-      console.error('FAIL: catalogue overrides are not applied:');
+      console.error("FAIL: catalogue overrides are not applied:");
       for (const u of unapplied) {
         console.error(
           `  ${u.id}: ${u.key} is ${JSON.stringify(u.actual)}, expected ${JSON.stringify(u.expected)}`,
         );
       }
-      console.error('Run: node tools/apply_license_overrides.mjs');
+      console.error("Run: node tools/apply_license_overrides.mjs");
       return 1;
     }
-    console.error(`OK: ${(overridesFile.overrides ?? []).length} override(s) applied`);
+    console.error(
+      `OK: ${(overridesFile.overrides ?? []).length} override(s) applied`,
+    );
     return 0;
   }
 
   const { text, changes } = applyOverridesToText(rawCatalog, overridesFile);
   if (changes.length === 0) {
-    console.error('no changes needed; catalog already matches the overrides');
+    console.error("no changes needed; catalog already matches the overrides");
     return 0;
   }
 
-  await writeFile(opts.catalog, text, 'utf8');
+  await writeFile(opts.catalog, text, "utf8");
 
   for (const c of changes) {
     console.error(`applied: ${c.id} ${c.key}: ${c.from} -> ${c.to}`);
@@ -168,11 +196,14 @@ export async function main(argv = process.argv.slice(2)) {
   return 0;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   main()
     .then((code) => process.exit(code))
     .catch((e) => {
-      console.error('FATAL', e.message ?? e);
+      console.error("FATAL", e.message ?? e);
       process.exit(2);
     });
 }
