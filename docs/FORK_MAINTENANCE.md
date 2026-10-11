@@ -90,41 +90,36 @@ git merge upstream/main
 Conflicts can only appear in the 16 modified files listed in §5. Everything else
 this fork adds is new files, which cannot conflict.
 
-## 4. Before GitHub Actions will be clean
+## 4. GitHub Actions on this fork
 
-Pushing to `main` currently triggers **six** workflows, three of which come from
-upstream and were written for a repository that has signing secrets and Nix
-infrastructure.
+Upstream ships a **reusable** build workflow, and getting this wrong is easy:
+`build.yml` declares `on: workflow_call` and is invoked by four others, including
+`main-build.yml`. It carries no secrets of its own - callers pass them. Deleting it
+because it *looks* like it needs signing secrets breaks the three-platform build,
+which is the main reason for being a fork at all. It is kept.
 
-| Workflow | Trigger | Needs secrets | On this fork |
-|---|---|---|---|
-| `voice-api.yml` | push / PR / dispatch | no | ✅ runs; added by this fork |
-| `test.yml` | push / PR / dispatch | no | ✅ runs |
-| `code-quality.yml` | push / PR / dispatch | no | ✅ runs |
-| `playwright.yml` | PR / dispatch | no | ⚠️ upstream's front-end E2E; may not match this fork's UI |
-| `main-build.yml` | **push** | no | ⚠️ builds all three platforms unsigned — the useful one |
-| `nix-check.yml` | push / PR / dispatch | **yes** | ❌ fails without Nix secrets |
-| `build.yml` | dispatch / release | **yes** | ❌ fails without signing secrets |
-| `release.yml` | dispatch only | no | ✅ will not publish by itself |
-| `app-build.yml` | dispatch only | no | ⚠️ added by this fork, **never executed** |
+What this fork removed:
 
-Suggested cleanup:
+| File | Why |
+|---|---|
+| `nix-check.yml` | Needs Nix infrastructure and secrets this fork does not have; nothing calls it. |
+| `app-build.yml` | Added by this fork, Windows-only, and never executed. `main-build.yml` already builds all three platforms. |
 
-1. **Delete or disable** `nix-check.yml` and `build.yml`. Neither can pass without
-   secrets this fork does not have, and a permanently red Actions tab trains you
-   to ignore it.
-2. **Keep** `main-build.yml` as the three-platform build check. It needs no
-   secrets, so it produces unsigned builds on `macos-latest`, `ubuntu-22.04` and
-   `windows-latest`.
-3. **Keep** `voice-api.yml`, which tests the portable `handy-voice-api` crate,
-   formatting and clippy on all three platforms.
-4. **Decide about** `app-build.yml`. It is this fork's own Windows-only build
-   workflow and it has **never been run**. Either delete it in favour of
-   `main-build.yml`, or exercise it once via *Actions → app build (manual) → Run
-   workflow* and fix what breaks.
+What remains, and what runs on a push to `main`:
 
-> **These workflows have not been executed by the author of this document.** The
-> statements above come from reading their trigger blocks and `secrets` usage, not
+| Workflow | Trigger | Role |
+|---|---|---|
+| `main-build.yml` | push to `main` | **The one that matters**: builds all three platforms, zero secrets, unsigned artifacts kept for 30 days. |
+| `build.yml` | `workflow_call` | The shared build implementation the others call. Not triggered directly. |
+| `voice-api.yml` | push / PR / dispatch | Added by this fork: tests the portable crate, fmt and clippy on all three platforms. |
+| `test.yml` | push / PR / dispatch | Upstream unit tests. |
+| `code-quality.yml` | push / PR / dispatch | Upstream lint and format checks. |
+| `playwright.yml` | PR / dispatch | Upstream front-end E2E; pages this fork removed may need its expectations updated. |
+| `build-test.yml`, `pr-test-build.yml` | dispatch | Upstream helpers around `build.yml`. |
+| `release.yml` | dispatch only | Will not publish on its own. Producing installers needs signing secrets. |
+
+> **None of these has been run by the author of this document.** The statements
+> come from reading trigger blocks, `secrets` usage and `uses:` references, not
 > from a green run. Treat the first push as the real test.
 
 ## 5. The upstream conflict surface
